@@ -285,6 +285,13 @@ class AgentExecutor:
                 event_type="AGENT_COMPLETED",
                 status="COMPLETED",
             )
+            try:
+                from src.observability.telemetry_service import get_telemetry_service
+                telemetry = get_telemetry_service()
+                telemetry.update_workflow_stage("VERIFICATION", "ACTIVE")
+                telemetry.update_workflow_stage("RESPONSE", "COMPLETED")
+            except Exception:
+                pass
         elif state.agent_status not in (AgentStatus.WAITING_FOR_APPROVAL, AgentStatus.REJECTED, AgentStatus.CANCELLED, AgentStatus.FAILED):
             state.agent_status = AgentStatus.FAILED
 

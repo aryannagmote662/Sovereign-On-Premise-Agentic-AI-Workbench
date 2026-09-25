@@ -90,29 +90,24 @@ class RAGService:
     async def query(
         self,
         query: str,
+        user: Optional[Any] = None,
         top_k: Optional[int] = None,
         collection_name: Optional[str] = None,
     ) -> RAGQueryResponse:
         """
-        Execute grounded RAG query flow: Question -> Retriever -> ContextBuilder -> QwenManager -> Answer + Sources.
-
-        Args:
-            query: User question string.
-            top_k: Optional top_k limit.
-            collection_name: Optional collection name override.
-
-        Returns:
-            RAGQueryResponse containing answer, source citations, and execution telemetry.
+        Execute grounded RAG query flow with pre-retrieval authorization.
         """
         start_time = time.perf_counter()
         cleaned_query = (query or "").strip()
 
-        # 1. Retrieve Relevant Vector Chunks
+        # 1. Retrieve Relevant Vector Chunks with Pre-Retrieval Authorization Filter
         retrieved_chunks = self.retriever.retrieve(
             query=cleaned_query,
+            user=user,
             top_k=top_k,
             collection_name=collection_name,
         )
+
 
         # 2. Build Compact Context Payload & Citations
         built_context = self.context_builder.build_context(

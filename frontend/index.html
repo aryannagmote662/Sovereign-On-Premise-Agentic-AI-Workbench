@@ -3,70 +3,85 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MRPL Sovereign AI Workbench</title>
+  <title>MRPL Sovereign AI Workstation</title>
   <link rel="icon" type="image/svg+xml" href="/static/assets/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="/static/css/app.css">
   <link rel="stylesheet" href="/static/css/components.css">
+  <link rel="stylesheet" href="/static/css/animations.css">
   <link rel="stylesheet" href="/static/css/responsive.css">
 </head>
 <body data-theme="dark">
   <div id="app-container">
-    <!-- Sidebar Navigation -->
+    <!-- Command Rail Navigation Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
-        <img src="/static/assets/logo.svg" alt="MRPL Logo">
+        <span class="sidebar-brand-mark">⬢</span>
         <div>
-          <h1>MRPL AI Workbench</h1>
-          <small style="color: var(--text-muted); font-size: 0.7rem;">Sovereign Platform v1.0</small>
+          <h1>MRPL AI // WORKSTATION</h1>
         </div>
       </div>
       <nav class="sidebar-nav">
-        <a href="#dashboard" class="nav-item active" data-view="dashboard">
-          <span class="nav-icon">📊</span> Dashboard
+        <div class="nav-section-label">Operations</div>
+        <a href="#dashboard" class="nav-item active" data-view="dashboard" id="nav-dashboard">
+          <span class="nav-icon">📊</span> <span>Dashboard</span>
         </a>
-        <a href="#chat" class="nav-item" data-view="chat">
-          <span class="nav-icon">💬</span> Unified Chat
+        <a href="#chat" class="nav-item" data-view="chat" id="nav-chat">
+          <span class="nav-icon">💬</span> <span>Unified Chat</span>
         </a>
-        <a href="#documents" class="nav-item" data-view="documents">
-          <span class="nav-icon">📁</span> Documents
+
+        <div class="nav-section-label">Data & Vision</div>
+        <a href="#documents" class="nav-item" data-view="documents" id="nav-documents">
+          <span class="nav-icon">📁</span> <span>Documents</span>
         </a>
-        <a href="#rag" class="nav-item" data-view="rag">
-          <span class="nav-icon">📚</span> Knowledge Base
+        <a href="#rag" class="nav-item" data-view="rag" id="nav-rag">
+          <span class="nav-icon">📚</span> <span>Knowledge Base</span>
         </a>
-        <a href="#ocr" class="nav-item" data-view="ocr">
-          <span class="nav-icon">👁️</span> OCR & Vision
+        <a href="#ocr" class="nav-item" data-view="ocr" id="nav-ocr">
+          <span class="nav-icon">👁️</span> <span>OCR & Vision</span>
         </a>
-        <a href="#agents" class="nav-item" data-view="agents">
-          <span class="nav-icon">🤖</span> Agent Tasks
+
+        <div class="nav-section-label">Agents & Governance</div>
+        <a href="#agents" class="nav-item" data-view="agents" id="nav-agents">
+          <span class="nav-icon">🤖</span> <span>Agent Tasks</span>
         </a>
-        <a href="#approvals" class="nav-item" data-view="approvals">
-          <span class="nav-icon">🛡️</span> Approvals
+        <a href="#approvals" class="nav-item" data-view="approvals" id="nav-approvals">
+          <span class="nav-icon">🛡️</span> <span>Approvals</span>
         </a>
-        <a href="#audit" class="nav-item" data-view="audit">
-          <span class="nav-icon">📜</span> Audit Trail
+        <a href="#audit" class="nav-item" data-view="audit" id="nav-audit">
+          <span class="nav-icon">📜</span> <span>Audit Trail</span>
         </a>
-        <a href="#health" class="nav-item" data-view="health">
-          <span class="nav-icon">⚙️</span> System Health
+        <a href="#users" class="nav-item" data-view="users" id="nav-users" style="display: none;">
+          <span class="nav-icon">👥</span> <span>User Admin</span>
+        </a>
+        <a href="#health" class="nav-item" data-view="health" id="nav-health">
+          <span class="nav-icon">⚙️</span> <span>System Health</span>
         </a>
       </nav>
       <div class="sidebar-footer">
-        100% Offline Air-Gapped Workstation
+        <span>AIR-GAP ENCLAVE</span>
+        <span class="station-tag">OT-NODE-1</span>
       </div>
     </aside>
 
     <!-- Main Content Area -->
     <div class="main-wrapper">
-      <!-- Topbar Header -->
+      <!-- Command Topbar Header -->
       <header class="topbar">
         <div class="topbar-left">
+          <span class="topbar-node-badge">MRPL // OT-NODE-1</span>
           <h2 id="page-title" class="page-title">Dashboard</h2>
         </div>
         <div class="topbar-right">
+          <div id="user-profile-badge"></div>
+          <button id="auth-logout-btn" class="btn btn-secondary btn-sm" title="Sign Out" onclick="Auth.logout()">🔒 Logout</button>
           <div id="offline-status-badge" class="offline-badge">
             <span class="status-dot"></span> AIR-GAPPED / OFFLINE
           </div>
           <button id="validate-offline-btn" class="btn btn-secondary btn-sm">Validate Posture</button>
           <button id="theme-toggle-btn" class="theme-toggle-btn">☀️ Light</button>
+          <button id="toggle-monitor-drawer-btn" class="btn btn-secondary btn-sm" title="Toggle AI System Monitor">⚡ Monitor</button>
         </div>
       </header>
 
@@ -75,7 +90,7 @@
       <!-- 1. Dashboard View -->
       <section id="dashboard-view" class="content-panel active">
         <div id="dashboard-content">
-          <div class="card"><p class="card-subtitle">Loading system telemetry...</p></div>
+          <div class="tech-section"><p class="card-subtitle" style="padding: 16px;">Loading system telemetry...</p></div>
         </div>
       </section>
 
@@ -84,115 +99,130 @@
         <div class="chat-container">
           <div id="chat-messages-container" class="chat-messages">
             <div class="message-bubble assistant">
-              Hello! I am the MRPL Sovereign AI Assistant. How can I assist you with refinery operations, engineering code, or document analysis today?
+              Hello! I am the MRPL Sovereign AI Workstation. How can I assist you with refinery operations, engineering code, document generation (Word, PPT, PDF, Excel), or document analysis today?
             </div>
           </div>
+          <div id="chat-attachment-preview-bar" class="chat-attachment-preview" style="display: none;"></div>
           <div class="chat-input-area">
-            <input type="text" id="chat-input" class="form-input" placeholder="Type your query here... (e.g. What is CDU-1 operating pressure threshold?)" style="flex: 1;">
-            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer;">
+            <input type="file" id="chat-file-input" style="display: none;" accept=".pdf,.docx,.doc,.xlsx,.xls,.pptx,.ppt,.csv,.txt,.md,.png,.jpg,.jpeg,.webp">
+            <button type="button" id="chat-attach-btn" class="btn btn-secondary btn-sm" title="Attach document or photo">📎 Attach</button>
+            <input type="text" id="chat-input" class="form-input" placeholder="Type query or prompt... (e.g. Generate a Word report on CDU-1 pressure readings)" style="flex: 1;">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: var(--text-secondary); cursor: pointer; white-space: nowrap;">
               <input type="checkbox" id="chat-force-rag"> Force RAG
             </label>
-            <button id="chat-send-btn" class="btn btn-primary">Send Prompt</button>
-            <button id="chat-clear-btn" class="btn btn-secondary">Clear</button>
+            <button id="chat-send-btn" class="btn btn-primary btn-sm">Send Prompt</button>
+            <button id="chat-clear-btn" class="btn btn-secondary btn-sm">Clear</button>
           </div>
         </div>
       </section>
 
       <!-- 3. Documents View -->
       <section id="documents-view" class="content-panel">
-        <div class="card" style="margin-bottom: 24px;">
-          <div class="card-header">
-            <span class="card-title">Upload Document for Processing & RAG</span>
+        <div class="tech-section" style="margin-bottom: 16px;">
+          <div class="tech-section-header">
+            <span class="tech-section-title">DOCUMENT INGESTION & PROCESSING</span>
           </div>
-          <form id="document-upload-form">
-            <div class="form-group">
-              <label class="form-label" for="doc-file-input">Select Document File (PDF, DOCX, TXT, MD, CSV, XLSX):</label>
-              <input type="file" id="doc-file-input" class="form-input" accept=".pdf,.docx,.txt,.md,.csv,.xlsx">
-            </div>
-            <button type="submit" id="doc-upload-btn" class="btn btn-primary">Upload & Process Document</button>
-          </form>
-          <div id="upload-status-result" style="margin-top: 16px;"></div>
+          <div class="tech-section-body">
+            <form id="document-upload-form">
+              <div class="form-group">
+                <label class="form-label" for="doc-file-input">Select Document File (PDF, DOCX, TXT, MD, CSV, XLSX):</label>
+                <input type="file" id="doc-file-input" class="form-input" accept=".pdf,.docx,.txt,.md,.csv,.xlsx">
+              </div>
+              <button type="submit" id="doc-upload-btn" class="btn btn-primary">Upload & Process Document</button>
+            </form>
+            <div id="upload-status-result" style="margin-top: 16px;"></div>
+          </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Uploaded & Indexed Documents</span>
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">UPLOADED & INDEXED DOCUMENT CATALOG</span>
           </div>
-          <div id="documents-list-container">
-            <p class="card-subtitle">Loading document catalog...</p>
+          <div class="tech-section-body">
+            <div id="documents-list-container">
+              <p class="card-subtitle">Loading document catalog...</p>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- 4. Knowledge Base / RAG View -->
       <section id="rag-view" class="content-panel">
-        <div id="rag-status-header" style="margin-bottom: 24px;"></div>
+        <div id="rag-status-header" style="margin-bottom: 16px;"></div>
 
-        <div class="card" style="margin-bottom: 24px;">
-          <div class="card-header">
-            <span class="card-title">Grounded Knowledge Base Vector Query</span>
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">GROUNDED KNOWLEDGE BASE VECTOR QUERY</span>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="rag-query-input">Target Knowledge Base Question:</label>
-            <input type="text" id="rag-query-input" class="form-input" placeholder="e.g. Summarize emergency shutdown protocol for CDU-1">
+          <div class="tech-section-body">
+            <div class="form-group">
+              <label class="form-label" for="rag-query-input">Target Knowledge Base Question:</label>
+              <input type="text" id="rag-query-input" class="form-input" placeholder="e.g. Summarize emergency shutdown protocol for CDU-1">
+            </div>
+            <div class="form-group" style="max-width: 200px;">
+              <label class="form-label" for="rag-topk-select">Top-K Passage Limit:</label>
+              <select id="rag-topk-select" class="form-select">
+                <option value="3" selected>3 Chunks</option>
+                <option value="5">5 Chunks</option>
+                <option value="10">10 Chunks</option>
+              </select>
+            </div>
+            <button id="rag-query-btn" class="btn btn-primary">Query Knowledge Base</button>
+            <div id="rag-query-result" style="margin-top: 16px;"></div>
           </div>
-          <div class="form-group" style="max-width: 200px;">
-            <label class="form-label" for="rag-topk-select">Top-K Passage Limit:</label>
-            <select id="rag-topk-select" class="form-select">
-              <option value="3" selected>3 Chunks</option>
-              <option value="5">5 Chunks</option>
-              <option value="10">10 Chunks</option>
-            </select>
-          </div>
-          <button id="rag-query-btn" class="btn btn-primary">Query Knowledge Base</button>
-          <div id="rag-query-result" style="margin-top: 16px;"></div>
         </div>
       </section>
 
       <!-- 5. OCR & Vision View -->
       <section id="ocr-view" class="content-panel">
-        <div id="ocr-health-panel" style="margin-bottom: 24px;"></div>
+        <div id="ocr-health-panel" style="margin-bottom: 16px;"></div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Engineering Diagram & Visual Document Inspection</span>
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">ENGINEERING DIAGRAM & VISUAL INSPECTION</span>
           </div>
-          <form id="ocr-upload-form">
-            <div class="form-group">
-              <label class="form-label" for="ocr-file-input">Select Technical Image or Scanned Document (PNG, JPG, TIFF, PDF):</label>
-              <input type="file" id="ocr-file-input" class="form-input" accept="image/*,.pdf">
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="ocr-prompt-input">Optional Vision Prompt Instructions:</label>
-              <input type="text" id="ocr-prompt-input" class="form-input" placeholder="Analyze engineering diagram and extract key text labels">
-            </div>
-            <button type="submit" id="ocr-submit-btn" class="btn btn-primary">Run OCR & Visual Inspection</button>
-          </form>
-          <div id="ocr-result-panel" style="margin-top: 20px;"></div>
+          <div class="tech-section-body">
+            <form id="ocr-upload-form">
+              <div class="form-group">
+                <label class="form-label" for="ocr-file-input">Select Technical Image or Scanned Document (PNG, JPG, TIFF, PDF):</label>
+                <input type="file" id="ocr-file-input" class="form-input" accept="image/*,.pdf">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="ocr-prompt-input">Optional Vision Prompt Instructions:</label>
+                <input type="text" id="ocr-prompt-input" class="form-input" placeholder="Analyze engineering diagram and extract key text labels">
+              </div>
+              <button type="submit" id="ocr-submit-btn" class="btn btn-primary">Run OCR & Visual Inspection</button>
+            </form>
+            <div id="ocr-result-panel" style="margin-top: 16px;"></div>
+          </div>
         </div>
       </section>
 
       <!-- 6. Agent Tasks View -->
       <section id="agents-view" class="content-panel">
-        <div class="card" style="margin-bottom: 24px;">
-          <div class="card-header">
-            <span class="card-title">Create Autonomous Agentic Task</span>
+        <div class="tech-section" style="margin-bottom: 16px;">
+          <div class="tech-section-header">
+            <span class="tech-section-title">CREATE AUTONOMOUS AGENT TASK</span>
           </div>
-          <form id="agent-task-form">
-            <div class="form-group">
-              <label class="form-label" for="agent-query-input">Task Goal / Operational Prompt:</label>
-              <input type="text" id="agent-query-input" class="form-input" placeholder="e.g. Extract CDU-1 pressure readings and draft approval report">
-            </div>
-            <button type="submit" id="agent-submit-btn" class="btn btn-primary">Plan & Create Agent Task</button>
-          </form>
+          <div class="tech-section-body">
+            <form id="agent-task-form">
+              <div class="form-group">
+                <label class="form-label" for="agent-query-input">Task Goal / Operational Prompt:</label>
+                <input type="text" id="agent-query-input" class="form-input" placeholder="e.g. Extract CDU-1 pressure readings and draft approval report">
+              </div>
+              <button type="submit" id="agent-submit-btn" class="btn btn-primary">Plan & Create Agent Task</button>
+            </form>
+          </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Agent Task Execution Trajectories</span>
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">AGENT TASK EXECUTION TRAJECTORIES</span>
           </div>
-          <div id="agent-tasks-container">
-            <p class="card-subtitle">Loading agent tasks...</p>
+          <div class="tech-section-body">
+            <div id="agent-tasks-container">
+              <p class="card-subtitle">Loading agent tasks...</p>
+            </div>
           </div>
         </div>
       </section>
@@ -206,22 +236,383 @@
 
       <!-- 8. Audit Trail View -->
       <section id="audit-view" class="content-panel">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Audit Trajectory & Security Event Log</span>
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">AUDIT TRAJECTORY & SECURITY EVENT LOG</span>
           </div>
-          <div id="audit-container">
-            <p class="card-subtitle">Loading audit log records...</p>
+          <div class="tech-section-body">
+            <div id="audit-container">
+              <p class="card-subtitle">Loading audit log records...</p>
+            </div>
           </div>
         </div>
       </section>
 
-      <!-- 9. System Health View -->
-      <section id="health-view" class="content-panel">
-        <div id="health-page-content">
-          <div class="card"><p class="card-subtitle">Querying consolidated system health telemetry...</p></div>
+      <!-- 9. User Management View (AI_IT_ADMIN Only) -->
+      <section id="users-view" class="content-panel">
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">PLATFORM USER ADMINISTRATION & APPROVALS</span>
+          </div>
+          <div class="tech-section-body">
+            <div id="users-list-container">
+              <p class="card-subtitle">Loading user accounts...</p>
+            </div>
+          </div>
         </div>
       </section>
+
+      <!-- 10. System Health View -->
+      <section id="health-view" class="content-panel">
+        <div id="health-page-content">
+          <div class="tech-section"><p class="card-subtitle" style="padding: 16px;">Querying consolidated system health telemetry...</p></div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Permanent Right-Side AI System Monitor Panel -->
+    <aside class="system-monitor-panel" id="system-monitor-panel">
+      <!-- Panel Header -->
+      <div class="monitor-header">
+        <div class="monitor-title-box">
+          <span class="monitor-icon">⚡</span>
+          <span class="monitor-title">AI SYSTEM MONITOR</span>
+          <span id="monitor-mode-badge" class="monitor-badge online">● ONLINE</span>
+        </div>
+        <div class="monitor-controls">
+          <button id="demo-mode-toggle-btn" class="btn-demo-toggle" title="Toggle Demo Telemetry Mode">
+            🎭 Demo Mode
+          </button>
+          <button id="monitor-collapse-btn" class="monitor-collapse-btn" title="Toggle Monitor Panel">
+            ⏩
+          </button>
+        </div>
+      </div>
+
+      <div class="monitor-scroll-area">
+        <!-- 1. CURRENT TASK -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">CURRENT TASK</span>
+            <span id="current-task-status-badge" class="status-pill idle">IDLE</span>
+          </div>
+          <div class="task-detail-box">
+            <div id="current-task-name" class="task-name">● Standby / System Ready</div>
+            <div id="current-task-model" class="task-model">No active request</div>
+            <div id="current-task-intent" class="task-intent">Intent: STANDBY</div>
+          </div>
+        </div>
+
+        <!-- 2. MODEL / VRAM VISUALIZATION -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">GPU VRAM RESOURCE</span>
+            <span id="vram-telemetry-notice" class="vram-notice">REAL TELEMETRY</span>
+          </div>
+          <div class="vram-container-box">
+            <div class="vram-header-info">
+              <span id="vram-device-name" class="vram-device-name">NVIDIA GPU / System Budget</span>
+              <span id="vram-usage-text" class="vram-usage-text">0.0 GB / 16.0 GB</span>
+            </div>
+            <div class="vram-bar-wrapper">
+              <div id="vram-bar-fill" class="vram-bar-fill" style="width: 0%;"></div>
+            </div>
+            <div class="vram-footer-info">
+              <span>ACTIVE MODEL:</span>
+              <span id="vram-active-model-name" class="active-model-tag">None (VRAM Clear)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. MODEL REGISTRY / MODEL SWITCH -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">MODEL REGISTRY & SWITCH</span>
+            <span class="card-badge" style="font-size: 0.62rem; color: var(--text-muted);">OPEN-WEIGHT</span>
+          </div>
+          <div id="model-registry-list" class="model-registry-list">
+            <!-- Dynamically rendered open-weight models -->
+          </div>
+        </div>
+
+        <!-- 4. ACTIVE WORKFLOW STAGES (AGENTIC TASK VISUALIZATION) -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">ACTIVE WORKFLOW TRAJECTORY</span>
+          </div>
+          <div id="workflow-pipeline-box" class="workflow-pipeline">
+            <div class="workflow-stage-item" data-stage="ROUTING">
+              <span class="stage-dot">○</span> ROUTING
+            </div>
+            <div class="workflow-stage-item" data-stage="AUTHORIZATION">
+              <span class="stage-dot">○</span> AUTHORIZATION
+            </div>
+            <div class="workflow-stage-item" data-stage="RAG">
+              <span class="stage-dot">○</span> RAG
+            </div>
+            <div class="workflow-stage-item" data-stage="INVESTIGATION">
+              <span class="stage-dot">○</span> INVESTIGATION
+            </div>
+            <div class="workflow-stage-item" data-stage="MODEL">
+              <span class="stage-dot">○</span> MODEL
+            </div>
+            <div class="workflow-stage-item" data-stage="VERIFICATION">
+              <span class="stage-dot">○</span> VERIFICATION
+            </div>
+            <div class="workflow-stage-item" data-stage="RESPONSE">
+              <span class="stage-dot">○</span> RESPONSE
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. NETWORK MONITOR -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">AIR-GAPPED NETWORK MONITOR</span>
+          </div>
+          <div class="network-status-grid">
+            <div class="network-item">
+              <span class="network-label">AIR-GAPPED POSTURE:</span>
+              <span class="network-value highlight">● LOCAL ONLY</span>
+            </div>
+            <div class="network-item">
+              <span class="network-label">EXTERNAL CALLS:</span>
+              <span class="network-value success">BLOCKED (0)</span>
+            </div>
+            <div class="network-item">
+              <span class="network-label">OLLAMA ENDPOINT:</span>
+              <span id="network-ollama-status" class="network-value success">127.0.0.1:11434 ● AVAILABLE</span>
+            </div>
+            <div class="network-item">
+              <span class="network-label">INTERNET ACCESS:</span>
+              <span class="network-value error">● DISCONNECTED</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. PERFORMANCE MONITOR -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">CAPABILITY PERFORMANCE</span>
+          </div>
+          <div class="performance-metrics-grid">
+            <div class="perf-metric-card" id="perf-card-code">
+              <div class="perf-header">
+                <span class="perf-name">💻 CODE</span>
+                <span class="perf-status" id="perf-status-code">IDLE</span>
+              </div>
+              <div class="perf-detail">Model: <strong id="perf-model-code">Qwen2.5-Coder-7B</strong></div>
+              <div class="perf-stats">
+                <span>Latency: <strong id="perf-latency-code">--</strong></span>
+                <span>Reqs: <strong id="perf-reqs-code">0</strong></span>
+              </div>
+            </div>
+
+            <div class="perf-metric-card" id="perf-card-ocr">
+              <div class="perf-header">
+                <span class="perf-name">👁️ OCR</span>
+                <span class="perf-status" id="perf-status-ocr">IDLE</span>
+              </div>
+              <div class="perf-detail">Engine: <strong id="perf-model-ocr">PaddleOCR</strong></div>
+              <div class="perf-stats">
+                <span>Latency: <strong id="perf-latency-ocr">--</strong></span>
+                <span>Reqs: <strong id="perf-reqs-ocr">0</strong></span>
+              </div>
+            </div>
+
+            <div class="perf-metric-card" id="perf-card-vision">
+              <div class="perf-header">
+                <span class="perf-name">🖼️ VISION</span>
+                <span class="perf-status" id="perf-status-vision">IDLE</span>
+              </div>
+              <div class="perf-detail">Model: <strong id="perf-model-vision">Qwen2.5-VL-3B</strong></div>
+              <div class="perf-stats">
+                <span>Latency: <strong id="perf-latency-vision">--</strong></span>
+                <span>Reqs: <strong id="perf-reqs-vision">0</strong></span>
+              </div>
+            </div>
+
+            <div class="perf-metric-card" id="perf-card-docgen">
+              <div class="perf-header">
+                <span class="perf-name">📄 DOC GEN</span>
+                <span class="perf-status" id="perf-status-docgen">IDLE</span>
+              </div>
+              <div class="perf-detail">Model: <strong id="perf-model-docgen">Qwen2.5-7B</strong></div>
+              <div class="perf-stats">
+                <span>Latency: <strong id="perf-latency-docgen">--</strong></span>
+                <span>Reqs: <strong id="perf-reqs-docgen">0</strong></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 7. MODEL SWITCH HISTORY -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">MODEL ACTIVITY HISTORY</span>
+          </div>
+          <div id="model-history-list" class="model-history-list">
+            <div class="history-item empty">No model switches recorded yet</div>
+          </div>
+        </div>
+
+        <!-- 8. EVENT STREAM LOG -->
+        <div class="monitor-card">
+          <div class="monitor-card-header">
+            <span class="monitor-card-title">LIVE EVENT STREAM</span>
+          </div>
+          <div id="event-stream-log" class="event-stream-log">
+            <!-- Live stream logs -->
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Authentication Modal Overlay (Login / Register) -->
+  <div id="auth-modal-overlay" class="modal-overlay" style="display: flex;">
+    <div class="modal-card" style="max-width: 440px; width: 100%;">
+      <!-- Login Card -->
+      <div id="auth-login-card">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <span style="font-size: 2rem; color: var(--accent-cyan); display: inline-block; margin-bottom: 4px;">⬢</span>
+          <h2 style="font-size: 1.1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">MRPL AI WORKSTATION</h2>
+          <p class="card-subtitle">Sovereign On-Premises Industrial Access Control</p>
+        </div>
+
+        <form id="auth-login-form" onsubmit="event.preventDefault(); Auth.login();">
+          <div class="form-group">
+            <label class="form-label" for="login-email">Email / Username:</label>
+            <input type="text" id="login-email" class="form-input" placeholder="engineer@mrpl.local" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="login-password">Password:</label>
+            <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+          </div>
+          <div id="login-status-msg" style="color: var(--status-error); font-size: 0.78rem; margin-bottom: 12px; min-height: 18px;"></div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In to Workstation</button>
+        </form>
+
+        <div style="margin-top: 14px; font-size: 0.78rem; text-align: center;">
+          Need an account? <a href="#" id="show-register-btn" style="color: var(--text-primary); font-weight: 600;">Request User Registration</a>
+        </div>
+
+        <!-- Dev Quick Seed Accounts -->
+        <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border-subtle);">
+          <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px; text-align: center;">
+            ⚡ Quick Seed Accounts (Development Mode):
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px;">
+            <button type="button" class="btn btn-secondary btn-sm seed-login-btn" data-email="operator@mrpl.local" data-password="mrpl123" onclick="Auth.quickLogin('operator@mrpl.local', 'mrpl123')">👷 Operator</button>
+            <button type="button" class="btn btn-secondary btn-sm seed-login-btn" data-email="engineer@mrpl.local" data-password="mrpl123" onclick="Auth.quickLogin('engineer@mrpl.local', 'mrpl123')">⚙️ Engineer</button>
+            <button type="button" class="btn btn-secondary btn-sm seed-login-btn" data-email="supervisor@mrpl.local" data-password="mrpl123" onclick="Auth.quickLogin('supervisor@mrpl.local', 'mrpl123')">🛡️ Supervisor</button>
+            <button type="button" class="btn btn-secondary btn-sm seed-login-btn" data-email="manager@mrpl.local" data-password="mrpl123" onclick="Auth.quickLogin('manager@mrpl.local', 'mrpl123')">📈 Manager</button>
+            <button type="button" class="btn btn-secondary btn-sm seed-login-btn" data-email="admin@mrpl.local" data-password="admin123" onclick="Auth.quickLogin('admin@mrpl.local', 'admin123')">🔑 Admin</button>
+            <button type="button" class="btn btn-secondary btn-sm seed-login-btn" data-email="auditor@mrpl.local" data-password="mrpl123" onclick="Auth.quickLogin('auditor@mrpl.local', 'mrpl123')">📜 Auditor</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registration Card -->
+      <div id="auth-register-card" style="display: none;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <h2 style="font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Registration Request</h2>
+          <p class="card-subtitle">Request access to MRPL AI Workstation</p>
+        </div>
+
+        <form id="auth-register-form" onsubmit="event.preventDefault(); Auth.register();">
+          <div class="form-group">
+            <label class="form-label" for="reg-name">Full Name:</label>
+            <input type="text" id="reg-name" class="form-input" placeholder="Ramesh Kumar" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-email">Corporate Email:</label>
+            <input type="email" id="reg-email" class="form-input" placeholder="rkumar@mrpl.co.in" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-password">Password:</label>
+            <input type="password" id="reg-password" class="form-input" placeholder="Minimum 6 characters" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-password-confirm">Confirm Password:</label>
+            <input type="password" id="reg-password-confirm" class="form-input" placeholder="Repeat password" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-department">Refinery Department:</label>
+            <input type="text" id="reg-department" class="form-input" placeholder="Process Engineering" value="Operations">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="reg-role">Requested Role:</label>
+            <select id="reg-role" class="form-select">
+              <option value="PLANT_OPERATOR">Plant Operator</option>
+              <option value="ENGINEER" selected>Engineer</option>
+              <option value="SHIFT_SUPERVISOR">Shift Supervisor</option>
+              <option value="PLANT_MANAGER">Plant Manager</option>
+              <option value="AUDITOR_DOC_CONTROLLER">Auditor / Document Controller</option>
+            </select>
+          </div>
+          <div id="register-status-msg" style="font-size: 0.78rem; margin-bottom: 12px; min-height: 18px;"></div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Registration Request</button>
+        </form>
+
+        <div style="margin-top: 14px; font-size: 0.78rem; text-align: center;">
+          Already registered? <a href="#" id="show-login-btn" style="color: var(--text-primary); font-weight: 600;">Sign In</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Account Edit / Approval Modal -->
+  <div id="edit-user-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card" style="max-width: 460px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Edit User Authorization</h3>
+        <button class="attachment-remove-btn" onclick="Auth.closeEditUserModal()">✕</button>
+      </div>
+
+      <input type="hidden" id="edit-user-id">
+
+      <div class="form-group">
+        <label class="form-label" for="edit-user-role">Assigned Application Role:</label>
+        <select id="edit-user-role" class="form-select">
+          <option value="PLANT_OPERATOR">Plant Operator (PLANT_OPERATOR)</option>
+          <option value="ENGINEER">Engineer (ENGINEER)</option>
+          <option value="SHIFT_SUPERVISOR">Shift Supervisor (SHIFT_SUPERVISOR)</option>
+          <option value="PLANT_MANAGER">Plant Manager (PLANT_MANAGER)</option>
+          <option value="AI_IT_ADMIN">AI/IT Administrator (AI_IT_ADMIN)</option>
+          <option value="AUDITOR_DOC_CONTROLLER">Auditor / Document Controller (AUDITOR_DOC_CONTROLLER)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="edit-user-workspace">Workspace Boundary ID:</label>
+        <input type="text" id="edit-user-workspace" class="form-input" placeholder="Operations, Engineering, IT-OT">
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="edit-user-clearance">Security Clearance Level (1 to 5):</label>
+        <select id="edit-user-clearance" class="form-select">
+          <option value="1">Level 1 — Unclassified / Public</option>
+          <option value="2">Level 2 — Operational Internal</option>
+          <option value="3">Level 3 — Technical Restricted</option>
+          <option value="4">Level 4 — Refinery Confidential</option>
+          <option value="5">Level 5 — Top Secret Sovereign</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="edit-user-status">Account Approval Status:</label>
+        <select id="edit-user-status" class="form-select">
+          <option value="PENDING">PENDING — Awaiting Approval</option>
+          <option value="ACTIVE">ACTIVE — Approved & Active</option>
+          <option value="DISABLED">DISABLED — Deactivated</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;">
+        <button class="btn btn-secondary btn-sm" onclick="Auth.closeEditUserModal()">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="Auth.submitUserUpdate()">Save Account Changes</button>
+      </div>
     </div>
   </div>
 
@@ -231,8 +622,10 @@
   <!-- Local JavaScript Modules -->
   <script src="/static/js/api.js"></script>
   <script src="/static/js/state.js"></script>
+  <script src="/static/js/animations.js"></script>
   <script src="/static/js/router.js"></script>
   <script src="/static/js/utils.js"></script>
+  <script src="/static/js/auth.js"></script>
   <script src="/static/js/dashboard.js"></script>
   <script src="/static/js/chat.js"></script>
   <script src="/static/js/documents.js"></script>
@@ -241,6 +634,8 @@
   <script src="/static/js/agents.js"></script>
   <script src="/static/js/approvals.js"></script>
   <script src="/static/js/audit.js"></script>
+  <script src="/static/js/health.js"></script>
+  <script src="/static/js/system_monitor.js"></script>
   <script src="/static/js/app.js"></script>
 </body>
 </html>

@@ -13,9 +13,11 @@ class ArtifactType(str, Enum):
     DOCX = "docx"
     XLSX = "xlsx"
     PPTX = "pptx"
+    PDF = "pdf"
     TXT = "txt"
     MD = "md"
     CODE = "code"
+
 
 
 class ArtifactMetadata(BaseModel):

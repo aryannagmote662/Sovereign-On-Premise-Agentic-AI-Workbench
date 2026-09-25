@@ -34,48 +34,49 @@ def test_password_hashing_and_constant_time_compare():
 
 
 def test_auth_service_user_login(auth_service):
-    # Valid login
-    res = auth_service.authenticate_user("admin", "admin123")
+    # Valid login using seeded admin account
+    res = auth_service.authenticate_user("admin@mrpl.local", "admin123")
     assert res is not None
     user, token = res
-    assert user.username == "admin"
-    assert user.role == UserRole.ADMIN
+    assert user.email == "admin@mrpl.local"
+    assert user.role == UserRole.AI_IT_ADMIN
     assert token.startswith("mrpl_tok_")
 
     # Validate token
     validated_user = auth_service.validate_token(token)
     assert validated_user is not None
-    assert validated_user.username == "admin"
+    assert validated_user.email == "admin@mrpl.local"
 
     # Invalid password login
-    invalid_res = auth_service.authenticate_user("admin", "wrongpassword")
+    invalid_res = auth_service.authenticate_user("admin@mrpl.local", "wrongpassword")
     assert invalid_res is None
 
-    # Invalid username login
-    nonexistent_res = auth_service.authenticate_user("nonexistent", "pass")
+    # Invalid email login
+    nonexistent_res = auth_service.authenticate_user("nonexistent@mrpl.local", "pass")
     assert nonexistent_res is None
 
 
 def test_auth_service_token_revocation(auth_service):
-    res = auth_service.authenticate_user("operator", "operator123")
+    res = auth_service.authenticate_user("operator@mrpl.local", "mrpl123")
     assert res is not None
     _, token = res
 
     assert auth_service.validate_token(token) is not None
-    revoked = auth_service.revoke_token(token)
+    revoked = auth_service.logout_user(token)
     assert revoked is True
     assert auth_service.validate_token(token) is None
 
 
 def test_rbac_permissions():
-    admin = User(user_id="1", username="admin", role=UserRole.ADMIN)
+    admin = User(user_id="1", full_name="Admin", email="admin@mrpl.local", role=UserRole.AI_IT_ADMIN)
     operator = User(
         user_id="2",
-        username="operator",
-        role=UserRole.OPERATOR,
+        full_name="Operator",
+        email="operator@mrpl.local",
+        role=UserRole.PLANT_OPERATOR,
         permissions=[PERMISSION_OPERATOR_READ],
     )
-    user = User(user_id="3", username="user", role=UserRole.USER, permissions=[])
+    user = User(user_id="3", full_name="Operator 2", email="op2@mrpl.local", role=UserRole.PLANT_OPERATOR, permissions=[])
 
     assert admin.has_permission(PERMISSION_SYSTEM_ADMIN) is True
     assert operator.has_permission(PERMISSION_OPERATOR_READ) is True
@@ -85,16 +86,16 @@ def test_rbac_permissions():
 
 def test_api_auth_login_and_me_endpoints(client):
     # 1. Login Endpoint
-    login_res = client.post("/auth/login", json={"username": "operator", "password": "operator123"})
+    login_res = client.post("/auth/login", json={"username": "operator@mrpl.local", "password": "mrpl123"})
     assert login_res.status_code == 200
     data = login_res.json()["data"]
-    assert data["role"] == "OPERATOR"
+    assert data["role"] == "PLANT_OPERATOR"
     token = data["access_token"]
 
     # 2. Get /auth/me with valid Bearer Token
     me_res = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert me_res.status_code == 200
-    assert me_res.json()["data"]["username"] == "operator"
+    assert me_res.json()["data"]["email"] == "operator@mrpl.local"
 
     # 3. Missing Token -> 401
     unauth_res = client.get("/auth/me")
@@ -109,24 +110,25 @@ def test_rbac_authorization_endpoint_restrictions(client):
     from src.security.request_security import get_security_service
     get_security_service().rate_limiter.reset()
 
-    # Analyst user login
-    res_analyst = client.post("/auth/login", json={"username": "analyst", "password": "analyst123"})
-    analyst_token = res_analyst.json()["data"]["access_token"]
+    # Operator user login
+    res_operator = client.post("/auth/login", json={"username": "operator@mrpl.local", "password": "mrpl123"})
+    operator_token = res_operator.json()["data"]["access_token"]
 
-    # Analyst attempting to access /operator/system -> 403 Forbidden (requires operator_read)
+    # Operator accessing /auth/users without admin role -> 403 Forbidden
     forbidden_res = client.get(
-        "/operator/system",
-        headers={"Authorization": f"Bearer {analyst_token}"},
+        "/auth/users",
+        headers={"Authorization": f"Bearer {operator_token}"},
     )
     assert forbidden_res.status_code == 403
 
-    # Operator user login
-    res_operator = client.post("/auth/login", json={"username": "operator", "password": "operator123"})
-    operator_token = res_operator.json()["data"]["access_token"]
+    # Admin user login
+    res_admin = client.post("/auth/login", json={"username": "admin@mrpl.local", "password": "admin123"})
+    admin_token = res_admin.json()["data"]["access_token"]
 
-    # Operator accessing /operator/system -> 200 OK
+    # Admin accessing /auth/users -> 200 OK
     allowed_res = client.get(
-        "/operator/system",
-        headers={"Authorization": f"Bearer {operator_token}"},
+        "/auth/users",
+        headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert allowed_res.status_code == 200
+

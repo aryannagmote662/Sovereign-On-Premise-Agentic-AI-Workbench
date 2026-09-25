@@ -178,6 +178,18 @@ class ChromaVectorStore(BaseVectorStore):
         final_count = collection.count()
         return max(0, initial_count - final_count)
 
+    def get_by_id(self, item_id: str, collection_name: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        collection = self._get_collection(collection_name)
+        try:
+            res = collection.get(ids=[item_id], include=["documents", "metadatas"])
+            if res and res.get("ids") and len(res["ids"]) > 0:
+                doc = res["documents"][0] if res.get("documents") else ""
+                meta = res["metadatas"][0] if res.get("metadatas") else {}
+                return {"id": res["ids"][0], "document": doc, "metadata": meta}
+        except Exception:
+            pass
+        return None
+
     def count(self, collection_name: Optional[str] = None) -> int:
         collection = self._get_collection(collection_name)
         return collection.count()

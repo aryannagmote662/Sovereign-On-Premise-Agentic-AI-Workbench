@@ -30,20 +30,27 @@ const OCRPage = {
     try {
       const data = await API.get('/ocr/health');
       healthDiv.innerHTML = `
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">OCR & Vision Health Status</span>
-            ${Utils.createBadge(data.status)}
+        <div class="posture-strip">
+          <div class="posture-cell">
+            <span class="posture-label">OCR Engine</span>
+            <span class="posture-value">${Utils.escapeHtml(data.ocr_engine)}</span>
           </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">OCR Engine</span><span class="kv-value">${Utils.escapeHtml(data.ocr_engine)}</span></div>
-            <div class="kv-item"><span class="kv-label">Vision Model</span><span class="kv-value">${Utils.escapeHtml(data.vision_model)}</span></div>
-            <div class="kv-item"><span class="kv-label">Local Execution</span><span class="kv-value">${data.local ? 'VERIFIED' : 'LOCAL'}</span></div>
+          <div class="posture-cell">
+            <span class="posture-label">Vision Model</span>
+            <span class="posture-value">${Utils.escapeHtml(data.vision_model)}</span>
+          </div>
+          <div class="posture-cell">
+            <span class="posture-label">Execution Mode</span>
+            <span class="posture-value" style="color: var(--status-success);">${data.local ? 'LOCAL // VERIFIED' : 'LOCAL'}</span>
           </div>
         </div>
       `;
     } catch (err) {
-      healthDiv.innerHTML = `<p class="card-subtitle" style="color: var(--status-error);">OCR health check failed (${Utils.escapeHtml(err.message)})</p>`;
+      healthDiv.innerHTML = `
+        <div style="padding: 12px; color: var(--status-error); font-size: 0.8rem; font-family: var(--font-mono);">
+          OCR TELEMETRY DESYNCHRONIZED (${Utils.escapeHtml(err.message)})
+        </div>
+      `;
     }
   },
 
@@ -68,26 +75,41 @@ const OCRPage = {
     try {
       submitBtn.disabled = true;
       if (resultDiv) {
-        resultDiv.innerHTML = `<p class="card-subtitle">Executing OCR and visual analysis on '${Utils.escapeHtml(file.name)}'...</p>`;
+        resultDiv.innerHTML = `
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Optical Character Extraction</span>
+              <span class="badge badge-info">PROCESSING</span>
+            </div>
+            <div class="tech-section-body">
+              <p class="text-secondary" style="font-size: 0.8rem; font-family: var(--font-mono);">Executing visual analysis on '${Utils.escapeHtml(file.name)}'...</p>
+            </div>
+          </div>
+        `;
       }
 
       const res = await API.upload('/ocr/process', formData);
 
       if (resultDiv) {
         resultDiv.innerHTML = `
-          <div class="card" style="border-color: var(--accent-teal);">
-            <div class="card-header">
-              <span class="card-title">OCR Analysis Result: ${Utils.escapeHtml(res.filename || file.name)}</span>
+          <div class="tech-section" style="border-color: var(--border-strong);">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Extraction Matrix: ${Utils.escapeHtml(res.filename || file.name)}</span>
               ${Utils.createBadge(res.extraction_mode || 'TEXT')}
             </div>
-            <div class="kv-list" style="margin-bottom: 16px;">
-              <div class="kv-item"><span class="kv-label">Page Classification</span><span class="kv-value">${Utils.escapeHtml(res.page_type || 'MIXED')}</span></div>
-              <div class="kv-item"><span class="kv-label">Characters Extracted</span><span class="kv-value">${res.total_characters || 0}</span></div>
-              <div class="kv-item"><span class="kv-label">Confidence Score</span><span class="kv-value">${res.confidence ? res.confidence.toFixed(2) : '1.00'}</span></div>
-            </div>
-            <h4>Extracted Text Content:</h4>
-            <div class="card" style="background-color: var(--bg-primary); margin-top: 8px; white-space: pre-wrap; font-family: monospace;">
-              ${Utils.escapeHtml(res.extracted_text || 'No text extracted.')}
+            <div class="tech-section-body">
+              <div class="data-matrix" style="margin-bottom: 16px;">
+                <div class="matrix-row"><span class="matrix-label">Page Classification</span><span class="matrix-value">${Utils.escapeHtml(res.page_type || 'MIXED')}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Characters Extracted</span><span class="matrix-value">${res.total_characters || 0}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Confidence Score</span><span class="matrix-value">${res.confidence ? res.confidence.toFixed(2) : '1.00'}</span></div>
+              </div>
+
+              <div style="font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 8px;">
+                EXTRACTED OCR TERMINAL OUTPUT
+              </div>
+              <div style="background-color: var(--surface-2); border: 1px solid var(--border-base); border-radius: var(--radius-sm); padding: 14px; white-space: pre-wrap; font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-primary); line-height: 1.5; max-height: 500px; overflow-y: auto;">
+                ${Utils.escapeHtml(res.extracted_text || 'No text extracted.')}
+              </div>
             </div>
           </div>
         `;
@@ -97,9 +119,14 @@ const OCRPage = {
     } catch (err) {
       if (resultDiv) {
         resultDiv.innerHTML = `
-          <div class="card" style="border-color: var(--status-error);">
-            <h4 style="color: var(--status-error);">OCR Processing Failed</h4>
-            <p class="card-subtitle">${Utils.escapeHtml(err.message)}</p>
+          <div class="tech-section" style="border-color: var(--status-error);">
+            <div class="tech-section-header" style="background-color: rgba(239, 68, 68, 0.1);">
+              <span class="tech-section-title" style="color: var(--status-error);">OCR Extraction Fault</span>
+              <span class="badge badge-error">FAULT</span>
+            </div>
+            <div class="tech-section-body">
+              <p class="text-secondary" style="font-size: 0.8rem;">${Utils.escapeHtml(err.message)}</p>
+            </div>
           </div>
         `;
       }
@@ -111,3 +138,4 @@ const OCRPage = {
 };
 
 window.OCRPage = OCRPage;
+

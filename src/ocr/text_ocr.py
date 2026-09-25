@@ -26,8 +26,23 @@ class TextOCREngine(BaseOCR):
         vision_analyzer: Optional[Any] = None,
     ) -> None:
         self.image_processor = image_processor or ImageProcessor()
-        self.vision_analyzer = vision_analyzer
+        self._vision_analyzer = vision_analyzer
         self._paddle_ocr = None
+
+    @property
+    def vision_analyzer(self) -> Any:
+        """Lazily initialize or return VisionAnalyzer fallback engine."""
+        if self._vision_analyzer is None:
+            try:
+                from src.ocr.vision_analyzer import VisionAnalyzer
+                self._vision_analyzer = VisionAnalyzer(image_processor=self.image_processor)
+            except Exception as exc:
+                logger.warning(f"Could not load fallback VisionAnalyzer: {exc}")
+        return self._vision_analyzer
+
+    @vision_analyzer.setter
+    def vision_analyzer(self, value: Any) -> None:
+        self._vision_analyzer = value
 
     def _get_paddle_ocr(self) -> Any:
         """Lazily initialize PaddleOCR instance."""

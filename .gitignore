@@ -75,7 +75,15 @@ venv.bak/
 logs/*.log
 logs/*.log.*
 
-# Data & Output Storage (Exclude contents, keep README)
+# Data & Output Storage
+data/cache/
+data/test_run/
+data/sqlite/*.db-shm
+data/sqlite/*.db-wal
+data/backups/*_backup_*.db
+examples/output/
+temp_test.png
+
 documents/*
 !documents/README.md
 
@@ -97,3 +105,4 @@ downloads/*
 # OS specific files
 Thumbs.db
 Desktop.ini
+

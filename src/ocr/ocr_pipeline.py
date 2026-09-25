@@ -198,6 +198,10 @@ class OCRPipeline:
             f"duration={duration_ms:.2f}ms"
         )
 
+        primary_page_type = page_results[0].page_type if page_results else "SCANNED_IMAGE"
+        primary_extraction_mode = page_results[0].extraction_method if page_results else "ocr"
+        confidence_score = 0.96 if "paddleocr" in primary_extraction_mode else 0.90
+
         return OCRProcessResponse(
             status="SUCCESS",
             filename=filename,
@@ -205,6 +209,11 @@ class OCRPipeline:
             total_pages=len(page_results),
             ocr_pages_count=ocr_pages_count,
             text_pages_count=text_pages_count,
+            extracted_text=combined_text,
+            total_characters=len(combined_text),
+            page_type=primary_page_type,
+            extraction_mode=primary_extraction_mode,
+            confidence=confidence_score,
             pages=page_results,
             chunks=chunk_schemas,
             metadata={

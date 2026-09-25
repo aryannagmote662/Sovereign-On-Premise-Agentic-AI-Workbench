@@ -89,6 +89,23 @@ class ModelRouter(BaseRouter):
             if settings.ENABLE_ROUTING_LOGS:
                 self._log_routing_telemetry(result)
 
+            try:
+                from src.observability.telemetry_service import get_telemetry_service
+                telemetry = get_telemetry_service()
+                telemetry.update_workflow_stage(
+                    stage="ROUTING",
+                    status="COMPLETED",
+                    query=request,
+                    route=intent.value,
+                    model=selected_model,
+                )
+                telemetry.update_workflow_stage(
+                    stage="AUTHORIZATION",
+                    status="ACTIVE",
+                )
+            except Exception:
+                pass
+
             return result
 
         except Exception as exc:

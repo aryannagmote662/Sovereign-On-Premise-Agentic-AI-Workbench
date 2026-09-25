@@ -10,7 +10,8 @@ from typing import Any, Dict, List, Optional, Tuple
 from config.settings import settings
 from src.persistence.database import DatabaseManager, get_db_manager
 from src.persistence.exceptions import PersistenceError, TaskNotFoundError
-from src.persistence.models import DBAuditEvent, DBExecution, DBPlan, DBTask
+from src.persistence.models import DBAuditEvent, DBExecution, DBPlan, DBTask, DBRole, DBUser, DBSession
+
 
 logger = logging.getLogger("MRPL.Persistence.Repositories")
 
@@ -281,7 +282,16 @@ class TaskRepository:
             tasks_graph=json.loads(row["tasks_graph_json"] or "[]"),
         )
 
-    def _row_to_task(self, row: sqlite3.Row) -> DBTask:
+    def delete_task(self, task_id: str) -> bool:
+        """Delete task, associated plan, executions, and audit records from SQLite."""
+        with self.db.transaction() as conn:
+            conn.execute("DELETE FROM agent_executions WHERE task_id = ?;", (task_id,))
+            conn.execute("DELETE FROM agent_audit_events WHERE task_id = ?;", (task_id,))
+            conn.execute("DELETE FROM agent_plans WHERE task_id = ?;", (task_id,))
+            cursor = conn.execute("DELETE FROM agent_tasks WHERE task_id = ?;", (task_id,))
+            return cursor.rowcount > 0
+
+    def _row_to_task(self, row: Any) -> DBTask:
         return DBTask(
             task_id=row["task_id"],
             user_id=row["user_id"],
@@ -453,3 +463,213 @@ class AuditRepository:
             for r in rows
         ]
         return events, total
+
+
+class RoleRepository:
+    """Repository managing platform RBAC roles."""
+
+    def __init__(self, db: Optional[DatabaseManager] = None):
+        self.db = db or get_db_manager()
+
+    def create_role(self, role: DBRole) -> DBRole:
+        sql = """
+            INSERT OR REPLACE INTO roles (id, name, code, primary_workspace, description, is_active)
+            VALUES (?, ?, ?, ?, ?, ?);
+        """
+        with self.db.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    role.id,
+                    role.name,
+                    role.code,
+                    role.primary_workspace,
+                    role.description,
+                    1 if role.is_active else 0,
+                ),
+            )
+        return role
+
+    def get_role_by_code(self, code: str) -> Optional[DBRole]:
+        conn = self.db.get_raw_connection()
+        row = conn.execute("SELECT * FROM roles WHERE code = ?;", (code,)).fetchone()
+        if not row:
+            return None
+        return DBRole(
+            id=row["id"],
+            name=row["name"],
+            code=row["code"],
+            primary_workspace=row["primary_workspace"],
+            description=row["description"] or "",
+            is_active=bool(row["is_active"]),
+        )
+
+    def list_roles() -> List[DBRole]:
+        conn = self.db.get_raw_connection()
+        rows = conn.execute("SELECT * FROM roles WHERE is_active = 1 ORDER BY name ASC;").fetchall()
+        return [
+            DBRole(
+                id=r["id"],
+                name=r["name"],
+                code=r["code"],
+                primary_workspace=r["primary_workspace"],
+                description=r["description"] or "",
+                is_active=bool(r["is_active"]),
+            )
+            for r in rows
+        ]
+
+    def seed_default_roles(self) -> None:
+        """Seed exact 6 application roles."""
+        default_roles = [
+            DBRole("role_op_001", "Plant Operator", "PLANT_OPERATOR", "Operations", "Operational monitoring & document inspection"),
+            DBRole("role_eng_001", "Engineer", "ENGINEER", "Engineering", "Refinery process & technical engineering operations"),
+            DBRole("role_sup_001", "Shift Supervisor", "SHIFT_SUPERVISOR", "Operations", "Operational sign-off and approval management"),
+            DBRole("role_mgr_001", "Plant Manager", "PLANT_MANAGER", "Management", "High-level analytics & refinery executive management"),
+            DBRole("role_admin_001", "AI/IT Administrator", "AI_IT_ADMIN", "IT-OT", "Platform, AI model, security & user administration"),
+            DBRole("role_aud_001", "Auditor / Document Controller", "AUDITOR_DOC_CONTROLLER", "Audit", "Document control & compliance auditing"),
+        ]
+        for r in default_roles:
+            self.create_role(r)
+
+
+class UserRepository:
+    """Repository managing platform User records."""
+
+    def __init__(self, db: Optional[DatabaseManager] = None):
+        self.db = db or get_db_manager()
+
+    def create_user(self, user: DBUser) -> DBUser:
+        sql = """
+            INSERT INTO users (id, full_name, email, password_hash, role, department, workspace_id, clearance_level, status, created_at, updated_at, last_login)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """
+        with self.db.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    user.id,
+                    user.full_name,
+                    user.email.lower().strip(),
+                    user.password_hash,
+                    user.role,
+                    user.department,
+                    user.workspace_id,
+                    user.clearance_level,
+                    user.status,
+                    user.created_at,
+                    user.updated_at,
+                    user.last_login,
+                ),
+            )
+        return user
+
+    def update_user(self, user: DBUser) -> DBUser:
+        sql = """
+            UPDATE users
+            SET full_name = ?, email = ?, password_hash = ?, role = ?, department = ?,
+                workspace_id = ?, clearance_level = ?, status = ?, updated_at = ?, last_login = ?
+            WHERE id = ?;
+        """
+        with self.db.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    user.full_name,
+                    user.email.lower().strip(),
+                    user.password_hash,
+                    user.role,
+                    user.department,
+                    user.workspace_id,
+                    user.clearance_level,
+                    user.status,
+                    user.updated_at,
+                    user.last_login,
+                    user.id,
+                ),
+            )
+        return user
+
+    def get_user_by_id(self, user_id: str) -> Optional[DBUser]:
+        conn = self.db.get_raw_connection()
+        row = conn.execute("SELECT * FROM users WHERE id = ?;", (user_id,)).fetchone()
+        if not row:
+            return None
+        return self._row_to_user(row)
+
+    def get_user_by_email(self, email: str) -> Optional[DBUser]:
+        conn = self.db.get_raw_connection()
+        row = conn.execute("SELECT * FROM users WHERE lower(email) = lower(?);", (email.strip(),)).fetchone()
+        if not row:
+            return None
+        return self._row_to_user(row)
+
+    def list_users(self, limit: int = 100, offset: int = 0) -> List[DBUser]:
+        conn = self.db.get_raw_connection()
+        rows = conn.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?;", (limit, offset)).fetchall()
+        return [self._row_to_user(r) for r in rows]
+
+    def _row_to_user(self, row: Any) -> DBUser:
+        return DBUser(
+            id=row["id"],
+            full_name=row["full_name"],
+            email=row["email"],
+            password_hash=row["password_hash"],
+            role=row["role"],
+            department=row["department"],
+            workspace_id=row["workspace_id"],
+            clearance_level=int(row["clearance_level"]),
+            status=row["status"],
+            created_at=row["created_at"],
+            updated_at=row["updated_at"],
+            last_login=row["last_login"],
+        )
+
+
+class SessionRepository:
+    """Repository managing user session tokens."""
+
+    def __init__(self, db: Optional[DatabaseManager] = None):
+        self.db = db or get_db_manager()
+
+    def create_session(self, session: DBSession) -> DBSession:
+        sql = """
+            INSERT INTO user_sessions (session_id, user_id, token, created_at, expires_at, is_active)
+            VALUES (?, ?, ?, ?, ?, ?);
+        """
+        with self.db.transaction() as conn:
+            conn.execute(
+                sql,
+                (
+                    session.session_id,
+                    session.user_id,
+                    session.token,
+                    session.created_at,
+                    session.expires_at,
+                    1 if session.is_active else 0,
+                ),
+            )
+        return session
+
+    def get_session_by_token(self, token: str) -> Optional[DBSession]:
+        conn = self.db.get_raw_connection()
+        row = conn.execute("SELECT * FROM user_sessions WHERE token = ? AND is_active = 1;", (token,)).fetchone()
+        if not row:
+            return None
+        return DBSession(
+            session_id=row["session_id"],
+            user_id=row["user_id"],
+            token=row["token"],
+            created_at=row["created_at"],
+            expires_at=row["expires_at"],
+            is_active=bool(row["is_active"]),
+        )
+
+    def deactivate_session(self, token: str) -> None:
+        with self.db.transaction() as conn:
+            conn.execute("UPDATE user_sessions SET is_active = 0 WHERE token = ?;", (token,))
+
+    def deactivate_all_user_sessions(self, user_id: str) -> None:
+        with self.db.transaction() as conn:
+            conn.execute("UPDATE user_sessions SET is_active = 0 WHERE user_id = ?;", (user_id,))
+

@@ -105,7 +105,32 @@ data/
 
 ---
 
-## 8. Three-Layer Defense-in-Depth Security Architecture
+## 8. Live AI System Monitor & Telemetry Architecture
+
+The **MRPL AI Workbench** features a production-grade, permanent right-side **AI System Monitor** console. Designed for high information density and an industrial control room aesthetic, it provides real-time observational visibility into:
+
+1. **Active Model & Routing Decisions**: Real-time visualization of the router decision (`Qwen2.5-7B-Instruct`, `Qwen2.5-Coder-7B-Instruct`, `Qwen2.5-VL-3B-Instruct`, etc.).
+2. **GPU VRAM Telemetry**: Physical resource bar animating loading and eviction of models from GPU VRAM. In hardware-restricted environments, explicitly indicates `VRAM TELEMETRY UNAVAILABLE` or enables labeled `DEMO TELEMETRY` mode.
+3. **Data-Driven Model Registry**: Open-weight model registry (`ModelRegistry`) supporting dynamic discovery and addition of future open-weight models (Llama-3, Mistral, Gemma, Phi, DeepSeek, Qwen) without UI or backend redesign.
+4. **Air-Gapped Network Monitor**: Real-time network security posture reporting zero external API calls, blocked outbound traffic, and local Ollama endpoint reachability.
+5. **Capability Performance Metrics**: Real-time latency, request count, and tokens/sec telemetry across the 4 core AI capabilities: `CODE`, `OCR`, `VISION`, and `DOCUMENT GENERATION`.
+6. **Agentic Task Trajectory**: Visual pipeline highlighting active workflow stages (`ROUTING` → `AUTHORIZATION` → `RAG` → `INVESTIGATION` → `MODEL` → `VERIFICATION` → `RESPONSE`).
+7. **Live Event Stream Log**: Monospace stream terminal logging real-time routing events, VRAM allocations, and model lifecycle transitions.
+
+### Telemetry API & Streaming Endpoints
+
+- **REST Full Telemetry**: `GET /system/telemetry`
+- **Model Registry Discovery**: `GET /system/system-models`
+- **GPU & VRAM Telemetry**: `GET /system/gpu`
+- **Air-Gapped Network Posture**: `GET /system/network`
+- **Capability Metrics**: `GET /system/performance`
+- **Demo Mode Toggle**: `POST /system/telemetry/demo-mode`
+- **Live WebSocket Stream**: `WS /system/telemetry/stream`
+- **Live SSE Stream**: `GET /system/telemetry/stream-sse`
+
+---
+
+## 9. Three-Layer Defense-in-Depth Security Architecture
 
 The **MRPL AI Workbench** protects sensitive industrial information throughout the complete AI data lifecycle:
 
@@ -307,6 +332,23 @@ The platform operates under ten strict security invariants:
 
 Documents (PDF, DOCX, CSV, images) are parsed locally (via PaddleOCR for scanned media), chunked, tagged with security metadata, embedded via `SentenceTransformers`, and indexed into ChromaDB. Similarity searches enforce strict pre-retrieval role and classification filters.
 
+### 9.1 Permanent MRPL Generic Knowledge Base Integration
+
+The workbench includes a permanently integrated, canonical refinery dataset containing 15 engineering troubleshooting and standard operating records:
+
+* **Canonical Location**: [`documents/knowledge_base/mrpl/mrpl_generic_knowledge_base.jsonl`](file:///c:/Users/shrav/OneDrive/Desktop/MRPL_AI_Workbench/documents/knowledge_base/mrpl/mrpl_generic_knowledge_base.jsonl)
+* **Metadata Preservation**: Stores complete field payloads (`id`, `topic`, `department`, `position`, `document_type`, `file_hash`, `workspace_id`).
+* **Position-Based Pre-Retrieval Filtering**: Pre-retrieval vector security gates strictly enforce position and department boundaries (e.g., `Reliability Engineer`, `Process Engineer`, `Console Operator`, `HSE Engineer`) to prevent cross-department data leakage.
+* **Startup Checksum Caching**: Dataset SHA-256 hash manifests (`data/cache/kb_manifest.json`) are checked automatically during FastAPI startup to bypass redundant embedding generation.
+* **CLI Ingestion Command**:
+  ```powershell
+  # Check & ingest missing records
+  py -3 -m src.rag.ingest_mrpl
+
+  # Force re-indexing of all records
+  py -3 -m src.rag.ingest_mrpl --force
+  ```
+
 ---
 
 ## 10. Multi-Agent Topology
@@ -372,6 +414,7 @@ Access API endpoints at `http://127.0.0.1:8000/docs`.
 ## 16. Primary API Endpoints
 
 - `GET /health` — Application and router health status.
+- `GET /knowledge-base` — MRPL Knowledge Base dataset readiness and record count endpoint.
 - `GET /models` — Available local model status and VRAM metrics.
 - `POST /router` — Intent classification and workflow routing.
 - `POST /chat` — Standard Q&A endpoint.

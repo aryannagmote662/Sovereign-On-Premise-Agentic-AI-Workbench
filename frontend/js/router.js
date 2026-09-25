@@ -41,6 +41,9 @@ const Router = {
     const targetPanel = document.getElementById(`${viewName}-view`);
     if (targetPanel) {
       targetPanel.classList.add('active');
+      if (window.Animations) {
+        Animations.animateViewEntrance(targetPanel);
+      }
     }
 
     // Update Sidebar items

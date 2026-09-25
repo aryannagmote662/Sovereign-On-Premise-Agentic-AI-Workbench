@@ -83,15 +83,40 @@ async def create_durable_task(
     # Associate current authenticated user_id
     state.metadata["user_id"] = user.user_id
     state.metadata["session_id"] = payload.session_id or "session_default"
-    orchestrator.state_store.save_state(state)
-
+    from src.agents.agent_types import AgentStatus
+    from src.persistence.models import DBTask
     task_repo = get_task_repo()
-    db_task = task_repo.get_task(state.task_id)
-    if not db_task:
-        raise HTTPException(status_code=500, detail="Failed to retrieve created persistent task.")
 
-    resp = AgentTaskResponse(**db_task.to_dict())
-    return success_response(data=resp, message="Durable agent task created successfully")
+    # Execute immediately if no approval gate is required
+    if state.agent_status != AgentStatus.WAITING_FOR_APPROVAL:
+        state = await orchestrator.execute(state.task_id)
+
+    # Persist relational DBTask record in SQLite
+    status_str = state.agent_status.value if hasattr(state.agent_status, "value") else str(state.agent_status)
+    approval_str = state.approval_status.value if hasattr(state.approval_status, "value") else str(state.approval_status)
+
+    db_task = DBTask(
+        task_id=state.task_id,
+        user_id=user.user_id,
+        session_id=payload.session_id or "session_default",
+        task_type=state.intent or "GENERAL_CHAT",
+        title=payload.query[:60],
+        query=payload.query,
+        status=status_str,
+        risk_level="LOW",
+        requires_approval=(state.agent_status == AgentStatus.WAITING_FOR_APPROVAL),
+        approval_status=approval_str,
+        current_step=state.current_step,
+        total_steps=state.total_steps,
+        result_status=status_str,
+        result_summary=str(state.final_result or ""),
+        metadata=state.metadata or {},
+    )
+    task_repo.create_task(db_task)
+
+    saved_task = task_repo.get_task(state.task_id)
+    resp = AgentTaskResponse(**(saved_task or db_task).to_dict())
+    return success_response(data=resp, message="Durable agent task created and executed successfully")
 
 
 @router.get("", response_model=StandardResponse[AgentTaskListResponse])
@@ -147,6 +172,39 @@ async def get_task_by_id(
 
     resp = AgentTaskResponse(**db_task.to_dict())
     return success_response(data=resp, message="Task details retrieved")
+
+
+@router.delete("/{task_id}", response_model=StandardResponse[dict])
+async def delete_task_by_id(
+    task_id: str,
+    user: User = Depends(get_current_user),
+    task_repo: TaskRepository = Depends(get_task_repo),
+    orchestrator: AgentOrchestrator = Depends(get_agent_orchestrator),
+):
+    """
+    Delete a durable agent task and its associated execution plan, traces, and state.
+    Strictly restricted to Admin role (UserRole.ADMIN).
+    """
+    if user.role not in (UserRole.ADMIN, UserRole.AI_IT_ADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required to delete agent tasks.",
+        )
+
+    db_task = task_repo.get_task(task_id)
+    if not db_task:
+        raise HTTPException(status_code=404, detail=f"Task '{task_id}' not found.")
+
+    task_repo.delete_task(task_id)
+    try:
+        orchestrator.state_store.delete_state(task_id)
+    except Exception:
+        pass
+
+    return success_response(
+        data={"task_id": task_id, "deleted": True},
+        message=f"Agent task '{task_id}' purged successfully",
+    )
 
 
 @router.get("/{task_id}/executions", response_model=StandardResponse[AgentExecutionListResponse])

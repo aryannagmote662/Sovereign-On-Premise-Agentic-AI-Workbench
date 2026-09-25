@@ -27,8 +27,8 @@ class VisionManager(BaseModel):
         """
         Analyze an image given an image file path by delegating prompt and image context to runtime.
         """
-        combined_prompt = f"[IMAGE_PATH: {image_path}] {prompt}"
-        return self.generate(prompt=combined_prompt, **kwargs)
+        images = kwargs.pop("images", [image_path])
+        return self.generate(prompt=prompt, images=images, **kwargs)
 
     def get_metadata(self) -> Dict[str, Any]:
         """Retrieve Vision model architecture metadata."""

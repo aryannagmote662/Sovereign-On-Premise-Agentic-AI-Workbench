@@ -1,0 +1,17 @@
+{
+  "dataset_name": "MRPL Generic Knowledge Base",
+  "version": "1.0",
+  "total_records": 15,
+  "canonical_file": "mrpl_generic_knowledge_base.jsonl",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "vector_store": "ChromaDB",
+  "synthetic_notice": "Generic/synthetic refinery engineering knowledge for demonstration. Preserves distinction from site-specific approved plant procedures.",
+  "metadata_fields": [
+    "id",
+    "department",
+    "position",
+    "topic",
+    "document_type",
+    "content"
+  ]
+}

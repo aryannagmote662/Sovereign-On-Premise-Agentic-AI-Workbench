@@ -27,23 +27,27 @@ const RAGPage = {
     try {
       const data = await API.get('/documents/rag/health');
       headerEl.innerHTML = `
-        <div class="cards-grid">
-          <div class="card">
-            <span class="card-subtitle">Collection Name</span>
-            <div class="card-metric">${Utils.escapeHtml(data.collection_name)}</div>
+        <div class="posture-strip">
+          <div class="posture-cell">
+            <span class="posture-label">Vector Collection</span>
+            <span class="posture-value">${Utils.escapeHtml(data.collection_name)}</span>
           </div>
-          <div class="card">
-            <span class="card-subtitle">Total Chunks Indexed</span>
-            <div class="card-metric">${data.total_chunks_indexed}</div>
+          <div class="posture-cell">
+            <span class="posture-label">Indexed Chunks</span>
+            <span class="posture-value">${data.total_chunks_indexed}</span>
           </div>
-          <div class="card">
-            <span class="card-subtitle">Embedding Model</span>
-            <div class="card-metric" style="font-size: 1.2rem;">${Utils.escapeHtml(data.embedding_provider?.model_name || 'all-MiniLM-L6-v2')}</div>
+          <div class="posture-cell">
+            <span class="posture-label">Embedding Engine</span>
+            <span class="posture-value">${Utils.escapeHtml(data.embedding_provider?.model_name || 'all-MiniLM-L6-v2')}</span>
           </div>
         </div>
       `;
     } catch (err) {
-      headerEl.innerHTML = `<p class="card-subtitle" style="color: var(--status-error);">RAG telemetry unavailable (${Utils.escapeHtml(err.message)})</p>`;
+      headerEl.innerHTML = `
+        <div style="padding: 12px; color: var(--status-error); font-size: 0.8rem; font-family: var(--font-mono);">
+          RAG TELEMETRY DESYNCHRONIZED (${Utils.escapeHtml(err.message)})
+        </div>
+      `;
     }
   },
 
@@ -64,7 +68,17 @@ const RAGPage = {
     try {
       btn.disabled = true;
       if (resultDiv) {
-        resultDiv.innerHTML = `<p class="card-subtitle">Retrieving grounded vector chunks...</p>`;
+        resultDiv.innerHTML = `
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Vector Search Execution</span>
+              <span class="badge badge-info">SEARCHING</span>
+            </div>
+            <div class="tech-section-body">
+              <p class="text-secondary" style="font-size: 0.8rem; font-family: var(--font-mono);">Retrieving grounded vector passages...</p>
+            </div>
+          </div>
+        `;
       }
 
       const res = await API.post('/documents/query', {
@@ -76,38 +90,61 @@ const RAGPage = {
         let sourcesHtml = '';
         if (res.sources && res.sources.length > 0) {
           sourcesHtml = res.sources.map(s => `
-            <div class="card" style="margin-bottom: 12px;">
-              <div class="card-header">
-                <span class="card-title">📄 ${Utils.escapeHtml(s.filename)} (Chunk ${s.chunk_id}, Page ${s.page || 1})</span>
-                <span class="badge badge-info">Score: ${s.score ? s.score.toFixed(3) : 'N/A'}</span>
+            <div class="tech-section" style="margin-bottom: 12px;">
+              <div class="tech-section-header">
+                <span class="tech-section-title">📄 ${Utils.escapeHtml(s.filename)} [Chunk ${s.chunk_id} // Page ${s.page || 1}]</span>
+                <span class="badge badge-info">SIMILARITY: ${s.score ? s.score.toFixed(3) : 'N/A'}</span>
               </div>
-              <p style="font-size: 0.9rem; color: var(--text-primary); margin-bottom: 8px;">
-                ${Utils.escapeHtml(s.snippet || '')}
-              </p>
-              <div class="card-subtitle">Doc ID: ${Utils.escapeHtml(s.document_id)}</div>
+              <div class="tech-section-body">
+                <p style="font-size: 0.84rem; color: var(--text-primary); margin-bottom: 8px; line-height: 1.5;">
+                  ${Utils.escapeHtml(s.snippet || '')}
+                </p>
+                <div style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);">
+                  Doc ID: ${Utils.escapeHtml(s.document_id)}
+                </div>
+              </div>
             </div>
           `).join('');
         } else {
-          sourcesHtml = `<p class="card-subtitle">No matching document chunks found above similarity threshold.</p>`;
+          sourcesHtml = `
+            <div style="padding: 16px; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono);">
+              NO MATCHING VECTOR CHUNKS EXCEEDED SIMILARITY THRESHOLD
+            </div>
+          `;
         }
 
         resultDiv.innerHTML = `
-          <div style="margin-top: 16px;">
-            <h3>Grounded Answer (${Utils.escapeHtml(res.model_used)})</h3>
-            <div class="card" style="margin: 12px 0; border-color: var(--accent-teal);">
-              <div class="assistant-response-content">${Utils.renderMarkdown(res.answer)}</div>
+          <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 16px;">
+            <div class="tech-section" style="border-color: var(--border-strong);">
+              <div class="tech-section-header">
+                <span class="tech-section-title">Grounded Intelligence Synthesis</span>
+                <span class="badge badge-success">MODEL: ${Utils.escapeHtml(res.model_used)}</span>
+              </div>
+              <div class="tech-section-body">
+                <div class="assistant-response-content">${Utils.renderMarkdown(res.answer)}</div>
+              </div>
             </div>
-            <h4>Retrieved Source Passages:</h4>
-            ${sourcesHtml}
+
+            <div>
+              <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px;">
+                Retrieved Vector Passages
+              </div>
+              ${sourcesHtml}
+            </div>
           </div>
         `;
       }
     } catch (err) {
       if (resultDiv) {
         resultDiv.innerHTML = `
-          <div class="card" style="border-color: var(--status-error);">
-            <h4 style="color: var(--status-error);">RAG Query Error</h4>
-            <p class="card-subtitle">${Utils.escapeHtml(err.message)}</p>
+          <div class="tech-section" style="border-color: var(--status-error);">
+            <div class="tech-section-header" style="background-color: rgba(239, 68, 68, 0.1);">
+              <span class="tech-section-title" style="color: var(--status-error);">Vector Search Fault</span>
+              <span class="badge badge-error">FAULT</span>
+            </div>
+            <div class="tech-section-body">
+              <p class="text-secondary" style="font-size: 0.8rem;">${Utils.escapeHtml(err.message)}</p>
+            </div>
           </div>
         `;
       }
@@ -119,3 +156,4 @@ const RAGPage = {
 };
 
 window.RAGPage = RAGPage;
+

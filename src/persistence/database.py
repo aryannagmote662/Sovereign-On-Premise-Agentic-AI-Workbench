@@ -23,7 +23,8 @@ class DatabaseManager:
     Enforces local WAL mode, foreign keys, connection pooling/context, and transaction boundaries.
     """
 
-    CURRENT_SCHEMA_VERSION = 1
+    CURRENT_SCHEMA_VERSION = 2
+
 
     def __init__(self, db_path: Optional[Path] = None) -> None:
         self.db_path = Path(db_path or settings.AGENT_DATABASE_PATH).resolve()

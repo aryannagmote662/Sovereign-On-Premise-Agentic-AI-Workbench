@@ -33,7 +33,7 @@ class OCRService:
         self._vision_analyzer = vision_analyzer
         text_ocr = TextOCREngine(
             image_processor=self.image_processor,
-            vision_analyzer=self._vision_analyzer,
+            vision_analyzer=self.vision_analyzer,
         )
         self.pipeline = pipeline or OCRPipeline(
             image_processor=self.image_processor,

@@ -5,8 +5,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Initializing MRPL Sovereign AI Workbench UI...');
 
-  // Initialize Router
+  // Initialize Router, Auth & System Monitor
   Router.init();
+  Auth.init();
+  if (window.SystemMonitor) {
+    SystemMonitor.init();
+  }
+
 
   // Bind Sidebar Navigation
   document.querySelectorAll('.nav-item').forEach(item => {

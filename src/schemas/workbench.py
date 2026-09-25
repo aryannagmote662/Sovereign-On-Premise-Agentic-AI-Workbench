@@ -29,6 +29,8 @@ class WorkbenchChatResponse(BaseModel):
     grounded_in_docs: bool = Field(default=False, description="Flag indicating if answer was grounded in RAG context")
     execution_time_seconds: float = Field(default=0.0, description="Total turn processing time in seconds")
     status: str = Field(default="SUCCESS", description="Execution status tag")
+    generated_artifact: Optional[Dict[str, Any]] = Field(default=None, description="Generated document artifact metadata if a document was created")
+
 
 
 class WorkbenchDocumentUploadResponse(BaseModel):

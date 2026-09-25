@@ -10,8 +10,10 @@ from typing import Any, Dict, List, Optional
 from src.artifacts.code_artifact import generate_code_artifact
 from src.artifacts.docx_generator import generate_docx_approval_note
 from src.artifacts.models import ArtifactMetadata, ArtifactType
+from src.artifacts.pdf_generator import generate_pdf_artifact
 from src.artifacts.pptx_generator import generate_pptx_artifact
 from src.artifacts.xlsx_generator import generate_xlsx_artifact
+
 
 
 class ArtifactManager:
@@ -192,6 +194,97 @@ class ArtifactManager:
         self._artifact_registry[artifact_id] = metadata
         return metadata
 
+    def create_pdf_document(
+        self,
+        task_id: str,
+        filename: Optional[str] = None,
+        title: str = "MRPL AI WORKBENCH — OFFICIAL AUDIT & REPORT",
+        reference_number: str = "MRPL-AI-REPORT-001",
+        subject: str = "Inspection Findings & Operational Compliance Report",
+        background: str = "Automated analysis conducted via MRPL Sovereign On-Premise AI Workbench.",
+        findings: Optional[List[str]] = None,
+        sources: Optional[List[Dict[str, Any]]] = None,
+        recommendations: Optional[List[str]] = None,
+        approver: str = "Chief Technical Inspector",
+        approval_status: str = "APPROVED",
+    ) -> ArtifactMetadata:
+        """
+        Creates and registers a .pdf deliverable artifact.
+        """
+        artifact_id = f"art-{uuid.uuid4().hex[:8]}"
+        filename = filename or f"report_{task_id}.pdf"
+        target_path = self.output_dir / filename
+
+        generate_pdf_artifact(
+            output_path=target_path,
+            task_id=task_id,
+            title=title,
+            reference_number=reference_number,
+            subject=subject,
+            background=background,
+            findings=findings,
+            sources=sources,
+            recommendations=recommendations,
+            approver=approver,
+            approval_status=approval_status,
+        )
+
+        size_bytes = target_path.stat().st_size if target_path.exists() else 0
+
+        metadata = ArtifactMetadata(
+            artifact_id=artifact_id,
+            task_id=task_id,
+            filename=filename,
+            artifact_type=ArtifactType.PDF,
+            filepath=str(target_path.resolve()),
+            size_bytes=size_bytes,
+            metadata={"title": title, "subject": subject},
+        )
+
+        self._artifact_registry[artifact_id] = metadata
+        return metadata
+
+    def create_csv_deliverable(
+        self,
+        task_id: str,
+        filename: Optional[str] = None,
+        headers: Optional[List[str]] = None,
+        rows: Optional[List[List[Any]]] = None,
+    ) -> ArtifactMetadata:
+        """
+        Creates and registers a .csv deliverable artifact.
+        """
+        artifact_id = f"art-{uuid.uuid4().hex[:8]}"
+        filename = filename or f"analysis_{task_id}.csv"
+        target_path = self.output_dir / filename
+        headers = headers or ["Item ID", "Parameter", "Observed Value", "Status"]
+        rows = rows or [
+            ["1", "Operating Pressure", "12.4 bar", "PASS"],
+            ["2", "Wall Thickness", "14.2 mm", "PASS"],
+        ]
+
+        lines = [",".join(headers)]
+        for row in rows:
+            lines.append(",".join(str(cell) for cell in row))
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        target_path.write_text("\n".join(lines), encoding="utf-8")
+
+        size_bytes = target_path.stat().st_size if target_path.exists() else 0
+
+        metadata = ArtifactMetadata(
+            artifact_id=artifact_id,
+            task_id=task_id,
+            filename=filename,
+            artifact_type=ArtifactType.TXT,
+            filepath=str(target_path.resolve()),
+            size_bytes=size_bytes,
+            metadata={"title": filename},
+        )
+
+        self._artifact_registry[artifact_id] = metadata
+        return metadata
+
     def get_artifact(self, artifact_id: str) -> Optional[ArtifactMetadata]:
         return self._artifact_registry.get(artifact_id)
 
@@ -201,3 +294,4 @@ class ArtifactManager:
 
 # Global Default ArtifactManager Singleton
 artifact_manager = ArtifactManager()
+

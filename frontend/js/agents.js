@@ -54,26 +54,33 @@ const AgentsPage = {
 
     try {
       const data = await API.get('/agent/tasks');
-      const tasks = data.items || [];
+      const tasks = data.tasks || data.items || [];
       State.agentTasks = tasks;
 
       if (!tasks || tasks.length === 0) {
-        container.innerHTML = `<p class="card-subtitle">No active or historical agent tasks found.</p>`;
+        container.innerHTML = `
+          <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono);">
+            NO AGENT EXECUTION TASKS REGISTERED
+          </div>
+        `;
         return;
       }
 
       const rows = tasks.map(t => `
         <tr>
-          <td><code>${Utils.escapeHtml(t.task_id)}</code></td>
-          <td>${Utils.escapeHtml(t.user_query)}</td>
-          <td>${Utils.escapeHtml(t.intent || 'GENERAL_CHAT')}</td>
-          <td>${Utils.escapeHtml(t.selected_model || 'qwen2.5:7b')}</td>
+          <td><code style="font-size: 0.75rem;">${Utils.escapeHtml(t.task_id)}</code></td>
+          <td><strong style="color: var(--text-primary); font-size: 0.82rem;">${Utils.escapeHtml(t.user_query)}</strong></td>
+          <td style="font-family: var(--font-mono); font-size: 0.76rem;">${Utils.escapeHtml(t.intent || 'GENERAL_CHAT')}</td>
+          <td style="font-family: var(--font-mono); font-size: 0.76rem;">${Utils.escapeHtml(t.selected_model || 'qwen2.5:7b')}</td>
           <td>${Utils.createBadge(t.agent_status || t.status)}</td>
-          <td>${Utils.formatDate(t.created_at)}</td>
+          <td style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--text-muted);">${Utils.formatDate(t.created_at)}</td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="AgentsPage.viewTaskDetails('${Utils.escapeHtml(t.task_id)}')">View</button>
-            ${t.status === 'RUNNING' || t.status === 'WAITING_FOR_APPROVAL' ? `<button class="btn btn-danger btn-sm" onclick="AgentsPage.cancelTask('${Utils.escapeHtml(t.task_id)}')">Cancel</button>` : ''}
-            ${t.status === 'INTERRUPTED' || t.status === 'FAILED' ? `<button class="btn btn-primary btn-sm" onclick="AgentsPage.resumeTask('${Utils.escapeHtml(t.task_id)}')">Resume</button>` : ''}
+            <div style="display: flex; gap: 4px;">
+              <button class="btn btn-secondary btn-sm" onclick="AgentsPage.viewTaskDetails('${Utils.escapeHtml(t.task_id)}')">Inspect</button>
+              ${t.status === 'RUNNING' || t.status === 'WAITING_FOR_APPROVAL' ? `<button class="btn btn-danger btn-sm" onclick="AgentsPage.cancelTask('${Utils.escapeHtml(t.task_id)}')">Abort</button>` : ''}
+              ${t.status === 'INTERRUPTED' || t.status === 'FAILED' ? `<button class="btn btn-primary btn-sm" onclick="AgentsPage.resumeTask('${Utils.escapeHtml(t.task_id)}')">Resume</button>` : ''}
+              <button class="btn btn-danger btn-sm" onclick="AgentsPage.deleteTask('${Utils.escapeHtml(t.task_id)}')">Delete</button>
+            </div>
           </td>
         </tr>
       `).join('');
@@ -100,7 +107,11 @@ const AgentsPage = {
         <div id="agent-detail-view" style="margin-top: 24px;"></div>
       `;
     } catch (err) {
-      container.innerHTML = `<p class="card-subtitle" style="color: var(--status-error);">Could not load task list (${Utils.escapeHtml(err.message)})</p>`;
+      container.innerHTML = `
+        <div style="padding: 16px; color: var(--status-error); font-size: 0.8rem;">
+          Could not load agent task registry (${Utils.escapeHtml(err.message)})
+        </div>
+      `;
     }
   },
 
@@ -109,7 +120,17 @@ const AgentsPage = {
     if (!detailDiv) return;
 
     try {
-      detailDiv.innerHTML = `<p class="card-subtitle">Fetching task execution trajectory for '${Utils.escapeHtml(taskId)}'...</p>`;
+      detailDiv.innerHTML = `
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">Retrieving Trajectory</span>
+            <span class="badge badge-info">POLLING</span>
+          </div>
+          <div class="tech-section-body">
+            <p class="text-secondary" style="font-size: 0.8rem; font-family: var(--font-mono);">Fetching task execution trajectory for '${Utils.escapeHtml(taskId)}'...</p>
+          </div>
+        </div>
+      `;
 
       const task = await API.get(`/agent/tasks/${encodeURIComponent(taskId)}`);
       const timeline = await API.get(`/agent/tasks/${encodeURIComponent(taskId)}/timeline`).catch(() => []);
@@ -117,37 +138,57 @@ const AgentsPage = {
       let planStepsHtml = '';
       if (task.plan && task.plan.tasks) {
         planStepsHtml = task.plan.tasks.map((st, idx) => `
-          <div class="plan-step-card">
-            <div style="font-weight: 700; width: 30px;">#${idx + 1}</div>
-            <div style="flex: 1;">
-              <div><strong>Tool:</strong> <code>${Utils.escapeHtml(st.tool_name)}</code></div>
-              <div class="card-subtitle">${Utils.escapeHtml(st.description || '')}</div>
+          <div style="background: var(--surface-2); border: 1px solid var(--border-base); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-family: var(--font-mono); font-weight: 700; font-size: 0.85rem; color: var(--text-muted);">#${idx + 1}</span>
+              <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-primary);">
+                  Tool: <code style="font-family: var(--font-mono); color: var(--text-secondary);">${Utils.escapeHtml(st.tool_name)}</code>
+                </div>
+                <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 2px;">
+                  ${Utils.escapeHtml(st.description || '')}
+                </div>
+              </div>
             </div>
             <div>${Utils.createBadge(st.risk_level || 'LOW')}</div>
           </div>
-        `).join('<div class="plan-step-arrow">↓</div>');
+        `).join('');
       }
 
       detailDiv.innerHTML = `
-        <div class="card" style="border-color: var(--accent-teal);">
-          <div class="card-header">
-            <span class="card-title">Task Trajectory Detail: ${Utils.escapeHtml(task.task_id)}</span>
+        <div class="tech-section" style="border-color: var(--border-strong);">
+          <div class="tech-section-header">
+            <span class="tech-section-title">Task Trajectory Detail: ${Utils.escapeHtml(task.task_id)}</span>
             ${Utils.createBadge(task.status)}
           </div>
-          <div class="kv-list" style="margin-bottom: 16px;">
-            <div class="kv-item"><span class="kv-label">Query</span><span class="kv-value">${Utils.escapeHtml(task.user_query)}</span></div>
-            <div class="kv-item"><span class="kv-label">Approval Status</span><span class="kv-value">${Utils.escapeHtml(task.approval_status)}</span></div>
-            <div class="kv-item"><span class="kv-label">Current Step</span><span class="kv-value">${task.current_step} / ${task.total_steps}</span></div>
-          </div>
+          <div class="tech-section-body">
+            <div class="data-matrix" style="margin-bottom: 16px;">
+              <div class="matrix-row"><span class="matrix-label">Goal / Query</span><span class="matrix-value">${Utils.escapeHtml(task.user_query)}</span></div>
+              <div class="matrix-row"><span class="matrix-label">Governance Approval</span><span class="matrix-value">${Utils.escapeHtml(task.approval_status)}</span></div>
+              <div class="matrix-row"><span class="matrix-label">Step Execution Progress</span><span class="matrix-value">${task.current_step} / ${task.total_steps}</span></div>
+            </div>
 
-          <h4>Generated Execution Plan:</h4>
-          <div class="plan-flow">
-            ${planStepsHtml || '<p class="card-subtitle">No plan step graph available.</p>'}
+            <div style="font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-secondary); margin-bottom: 10px;">
+              Generated Task Plan Graph
+            </div>
+            <div class="plan-flow">
+              ${planStepsHtml || '<div style="padding: 12px; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono);">NO STEP GRAPH AVAILABLE</div>'}
+            </div>
           </div>
         </div>
       `;
     } catch (err) {
-      detailDiv.innerHTML = `<p class="card-subtitle" style="color: var(--status-error);">Failed to load details (${Utils.escapeHtml(err.message)})</p>`;
+      detailDiv.innerHTML = `
+        <div class="tech-section" style="border-color: var(--status-error);">
+          <div class="tech-section-header" style="background-color: rgba(239, 68, 68, 0.1);">
+            <span class="tech-section-title" style="color: var(--status-error);">Trajectory Retrieval Fault</span>
+            <span class="badge badge-error">FAULT</span>
+          </div>
+          <div class="tech-section-body">
+            <p class="text-secondary" style="font-size: 0.8rem;">${Utils.escapeHtml(err.message)}</p>
+          </div>
+        </div>
+      `;
     }
   },
 
@@ -169,7 +210,22 @@ const AgentsPage = {
     } catch (err) {
       Utils.showToast(`Cancel failed: ${err.message}`, true);
     }
+  },
+
+  async deleteTask(taskId) {
+    if (!confirm(`Are you sure you want to PERMANENTLY DELETE task '${taskId}' and purge its record?`)) {
+      return;
+    }
+
+    try {
+      await API.delete(`/agent/tasks/${encodeURIComponent(taskId)}`);
+      Utils.showToast(`Agent task '${taskId}' deleted successfully.`);
+      await this.fetchTaskList();
+    } catch (err) {
+      Utils.showToast(`Delete failed: ${err.message}`, true);
+    }
   }
 };
 
 window.AgentsPage = AgentsPage;
+

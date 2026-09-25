@@ -14,7 +14,7 @@ def test_database_manager_initialization(tmp_path):
     assert db_file.exists()
     status = db_mgr.get_status()
     assert status["status"] == "healthy"
-    assert status["schema_version"] == 1
+    assert status["schema_version"] == 2
 
 
 def test_database_transaction_and_rollback(tmp_path):

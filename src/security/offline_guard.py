@@ -159,6 +159,10 @@ class OfflineGuard:
         res = self.validate_all()
         return res["status"] in ("healthy", "degraded")
 
+    def is_offline_enforced(self) -> bool:
+        """Check if air-gap offline posture is enforced."""
+        return self.is_offline_safe()
+
     def get_status(self) -> Dict[str, Any]:
         """Get summary offline posture dictionary."""
         val = self.validate_all()

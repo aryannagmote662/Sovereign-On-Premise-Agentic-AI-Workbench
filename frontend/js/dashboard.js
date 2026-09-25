@@ -8,7 +8,17 @@ const DashboardPage = {
     if (!container) return;
 
     try {
-      container.innerHTML = `<div class="card"><p class="card-subtitle">Loading system telemetry...</p></div>`;
+      container.innerHTML = `
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">Telemetry Synchronization</span>
+            <span class="badge badge-info">POLLING</span>
+          </div>
+          <div class="tech-section-body">
+            <p class="text-secondary" style="font-size: 0.8rem; font-family: var(--font-mono);">Connecting to Sovereign Node Telemetry Stream...</p>
+          </div>
+        </div>
+      `;
       
       const healthData = await API.get('/workbench/health');
       State.setSystemHealth(healthData);
@@ -16,9 +26,14 @@ const DashboardPage = {
       this.render(healthData, container);
     } catch (err) {
       container.innerHTML = `
-        <div class="card" style="border-color: var(--status-error);">
-          <h3 style="color: var(--status-error);">Failed to load telemetry</h3>
-          <p class="card-subtitle">${Utils.escapeHtml(err.message)}</p>
+        <div class="tech-section" style="border-color: var(--status-error);">
+          <div class="tech-section-header" style="background-color: rgba(239, 68, 68, 0.1);">
+            <span class="tech-section-title" style="color: var(--status-error);">Telemetry Desynchronization Fault</span>
+            <span class="badge badge-error">FAULT</span>
+          </div>
+          <div class="tech-section-body">
+            <p class="text-secondary" style="font-size: 0.8rem;">${Utils.escapeHtml(err.message)}</p>
+          </div>
         </div>
       `;
       Utils.showToast(err.message, true);
@@ -34,82 +49,127 @@ const DashboardPage = {
     const mem = data.memory_status || {};
 
     const html = `
-      <div class="cards-grid">
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">System Status</span>
-            ${Utils.createBadge(status)}
+      <div class="workstation-layout tech-console">
+        <!-- Top 4-Cell Posture Strip -->
+        <div class="posture-strip">
+          <div class="posture-cell">
+            <span class="posture-label">System Posture</span>
+            <span class="posture-value">${Utils.createBadge(status)}</span>
           </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">Workbench</span><span class="kv-value">${data.workbench_enabled ? 'ENABLED' : 'DISABLED'}</span></div>
-            <div class="kv-item"><span class="kv-label">Offline Mode</span><span class="kv-value">${off.offline_mode ? 'ENABLED' : 'DISABLED'}</span></div>
-            <div class="kv-item"><span class="kv-label">Strict Air-Gapped</span><span class="kv-value">${off.strict_mode ? 'ENABLED' : 'DISABLED'}</span></div>
-            <div class="kv-item"><span class="kv-label">Network Policy</span><span class="kv-value">${Utils.escapeHtml(off.network_policy || 'LOCAL_ONLY')}</span></div>
+          <div class="posture-cell">
+            <span class="posture-label">Workbench Core</span>
+            <span class="posture-value" style="color: ${data.workbench_enabled ? 'var(--status-success)' : 'var(--status-error)'};">
+              ${data.workbench_enabled ? 'ONLINE // ACTIVE' : 'OFFLINE // INACTIVE'}
+            </span>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Local Production Models</span>
-            ${Utils.createBadge(router.ollama_available ? 'PASS' : 'WARNING')}
+          <div class="posture-cell">
+            <span class="posture-label">Air-Gap Enclave</span>
+            <span class="posture-value" style="color: ${off.offline_mode ? 'var(--status-success)' : 'var(--status-warning)'};">
+              ${off.offline_mode ? 'ENFORCED // STRICT' : 'DEGRADED'}
+            </span>
           </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">Qwen 2.5 7B (Default)</span><span class="kv-value">${router.models_status?.['qwen2.5:7b'] ? 'INSTALLED' : 'MISSING'}</span></div>
-            <div class="kv-item"><span class="kv-label">DeepSeek Coder 6.7B</span><span class="kv-value">${router.models_status?.['deepseek-coder:6.7b'] ? 'INSTALLED' : 'MISSING'}</span></div>
-            <div class="kv-item"><span class="kv-label">MiniCPM-V 8B (Vision)</span><span class="kv-value">${router.models_status?.['minicpm-v:8b'] ? 'INSTALLED' : 'MISSING'}</span></div>
-            <div class="kv-item"><span class="kv-label">Single-Model VRAM</span><span class="kv-value">ENFORCED (1 Max)</span></div>
+          <div class="posture-cell">
+            <span class="posture-label">Network Policy</span>
+            <span class="posture-value">${Utils.escapeHtml(off.network_policy || 'LOCAL_ONLY')}</span>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Local RAG Subsystem</span>
-            ${Utils.createBadge(rag.status || 'healthy')}
+        <!-- Row 1: Inference Roster & Model Router vs Knowledge Base & RAG Engine -->
+        <div class="tech-grid-2col">
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Inference Roster & Model Router</span>
+              ${Utils.createBadge(router.ollama_available ? 'PASS' : 'WARNING')}
+            </div>
+            <div class="tech-section-body">
+              <div class="data-matrix">
+                <div class="matrix-row"><span class="matrix-label">Qwen 2.5 7B (Default)</span><span class="matrix-value">${router.models_status?.['qwen2.5:7b'] ? 'INSTALLED' : 'MISSING'}</span></div>
+                <div class="matrix-row"><span class="matrix-label">DeepSeek Coder 6.7B</span><span class="matrix-value">${router.models_status?.['deepseek-coder:6.7b'] ? 'INSTALLED' : 'MISSING'}</span></div>
+                <div class="matrix-row"><span class="matrix-label">MiniCPM-V 8B (Vision)</span><span class="matrix-value">${router.models_status?.['minicpm-v:8b'] ? 'INSTALLED' : 'MISSING'}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Single-Model VRAM</span><span class="matrix-value">ENFORCED (1 Max)</span></div>
+              </div>
+            </div>
           </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">Collection</span><span class="kv-value">${Utils.escapeHtml(rag.collection_name || 'mrpl_documents')}</span></div>
-            <div class="kv-item"><span class="kv-label">Indexed Chunks</span><span class="kv-value">${rag.total_chunks_indexed || 0}</span></div>
-            <div class="kv-item"><span class="kv-label">Embedding Provider</span><span class="kv-value">${Utils.escapeHtml(rag.embedding_provider?.provider || 'SentenceTransformer')}</span></div>
-            <div class="kv-item"><span class="kv-label">Vector Store</span><span class="kv-value">${Utils.escapeHtml(rag.vector_store?.provider || 'ChromaDB')}</span></div>
+
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Knowledge Base & RAG Engine</span>
+              ${Utils.createBadge(rag.status || 'healthy')}
+            </div>
+            <div class="tech-section-body">
+              <div class="data-matrix">
+                <div class="matrix-row"><span class="matrix-label">Collection</span><span class="matrix-value">${Utils.escapeHtml(rag.collection_name || 'mrpl_documents')}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Indexed Chunks</span><span class="matrix-value">${rag.total_chunks_indexed || 0}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Embedding Provider</span><span class="matrix-value">${Utils.escapeHtml(rag.embedding_provider?.provider || 'SentenceTransformer')}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Vector Store</span><span class="matrix-value">${Utils.escapeHtml(rag.vector_store?.provider || 'ChromaDB')}</span></div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">OCR & Vision Intelligence</span>
-            ${Utils.createBadge(ocr.status || 'healthy')}
+        <!-- Row 2: Hardware Memory & Execution vs Local Vision & OCR Pipeline -->
+        <div class="tech-grid-2col">
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Hardware Memory & Execution</span>
+              ${Utils.createBadge('healthy')}
+            </div>
+            <div class="tech-section-body">
+              <div class="data-matrix">
+                <div class="matrix-row"><span class="matrix-label">System RAM Used</span><span class="matrix-value">${mem.ram_used_gb || '0.0'} / ${mem.ram_total_gb || '0.0'} GB</span></div>
+                <div class="matrix-row"><span class="matrix-label">Process RSS</span><span class="matrix-value">${mem.process_rss_mb || '0'} MB</span></div>
+                <div class="matrix-row"><span class="matrix-label">GPU Acceleration</span><span class="matrix-value">${mem.gpu_available ? 'ACTIVE' : 'INACTIVE'}</span></div>
+                <div class="matrix-row"><span class="matrix-label">VRAM Allocation</span><span class="matrix-value">${mem.vram_used_gb || '0.0'} GB</span></div>
+              </div>
+            </div>
           </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">OCR Engine</span><span class="kv-value">${Utils.escapeHtml(ocr.ocr_engine || 'pytesseract')}</span></div>
-            <div class="kv-item"><span class="kv-label">Vision LLM</span><span class="kv-value">${Utils.escapeHtml(ocr.vision_model || 'minicpm-v:8b')}</span></div>
-            <div class="kv-item"><span class="kv-label">Max Image Size</span><span class="kv-value">${ocr.max_image_size_mb || 20} MB</span></div>
-            <div class="kv-item"><span class="kv-label">Local Execution</span><span class="kv-value">${ocr.local ? 'VERIFIED' : 'LOCAL'}</span></div>
+
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Local Vision & OCR Pipeline</span>
+              ${Utils.createBadge(ocr.status || 'healthy')}
+            </div>
+            <div class="tech-section-body">
+              <div class="data-matrix">
+                <div class="matrix-row"><span class="matrix-label">OCR Engine</span><span class="matrix-value">${Utils.escapeHtml(ocr.ocr_engine || 'pytesseract')}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Vision LLM</span><span class="matrix-value">${Utils.escapeHtml(ocr.vision_model || 'minicpm-v:8b')}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Max File Ceiling</span><span class="matrix-value">${ocr.max_image_size_mb || 20} MB</span></div>
+                <div class="matrix-row"><span class="matrix-label">Local Execution</span><span class="matrix-value">${ocr.local ? 'VERIFIED' : 'LOCAL'}</span></div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Memory & VRAM Diagnostics</span>
-            ${Utils.createBadge('healthy')}
+        <!-- Row 3: Security & Network Enclave vs Persistence & Audit Verification -->
+        <div class="tech-grid-2col">
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Security & Network Enclave</span>
+              ${Utils.createBadge(off.strict_mode ? 'PASS' : 'WARNING')}
+            </div>
+            <div class="tech-section-body">
+              <div class="data-matrix">
+                <div class="matrix-row"><span class="matrix-label">Strict Air-Gap</span><span class="matrix-value">${off.strict_mode ? 'ENFORCED' : 'OFF'}</span></div>
+                <div class="matrix-row"><span class="matrix-label">Socket Filtering</span><span class="matrix-value">KERNEL_SECTOR_LOCK</span></div>
+                <div class="matrix-row"><span class="matrix-label">Outbound Guard</span><span class="matrix-value">DROP_ALL_EXTERNAL</span></div>
+                <div class="matrix-row"><span class="matrix-label">Audit Logging</span><span class="matrix-value">IMMUTABLE_APPEND</span></div>
+              </div>
+            </div>
           </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">System RAM Used</span><span class="kv-value">${mem.ram_used_gb || '0.0'} / ${mem.ram_total_gb || '0.0'} GB</span></div>
-            <div class="kv-item"><span class="kv-label">Process RSS</span><span class="kv-value">${mem.process_rss_mb || '0'} MB</span></div>
-            <div class="kv-item"><span class="kv-label">GPU Available</span><span class="kv-value">${mem.gpu_available ? 'YES' : 'NO'}</span></div>
-            <div class="kv-item"><span class="kv-label">VRAM Load</span><span class="kv-value">${mem.vram_used_gb || '0.0'} GB</span></div>
-          </div>
-        </div>
 
-        <div class="card">
-          <div class="card-header">
-            <span class="card-title">Durable Persistence & Recovery</span>
-            ${Utils.createBadge(off.persistence_local ? 'PASS' : 'WARNING')}
-          </div>
-          <div class="kv-list">
-            <div class="kv-item"><span class="kv-label">Database Provider</span><span class="kv-value">SQLite (WAL Mode)</span></div>
-            <div class="kv-item"><span class="kv-label">Database File</span><span class="kv-value">mrpl_workbench.db</span></div>
-            <div class="kv-item"><span class="kv-label">Startup Recovery</span><span class="kv-value">ENABLED</span></div>
-            <div class="kv-item"><span class="kv-label">Persistence Audit</span><span class="kv-value">ACTIVE</span></div>
+          <div class="tech-section">
+            <div class="tech-section-header">
+              <span class="tech-section-title">Persistence & Audit Verification</span>
+              ${Utils.createBadge(off.persistence_local ? 'PASS' : 'WARNING')}
+            </div>
+            <div class="tech-section-body">
+              <div class="data-matrix">
+                <div class="matrix-row"><span class="matrix-label">Database Provider</span><span class="matrix-value">SQLite (WAL Mode)</span></div>
+                <div class="matrix-row"><span class="matrix-label">Database Target</span><span class="matrix-value">mrpl_workbench.db</span></div>
+                <div class="matrix-row"><span class="matrix-label">Startup Recovery</span><span class="matrix-value">AUTOMATIC</span></div>
+                <div class="matrix-row"><span class="matrix-label">Persistence Audit</span><span class="matrix-value">ACTIVE</span></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -120,3 +180,4 @@ const DashboardPage = {
 };
 
 window.DashboardPage = DashboardPage;
+

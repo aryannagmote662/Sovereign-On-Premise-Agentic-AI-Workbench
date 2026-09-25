@@ -3,8 +3,10 @@ Workbench Unified REST API Routes for MRPL AI Workbench.
 Exposes endpoints orchestrating end-to-end chat routing, document ingestion, vision analysis, and system health.
 """
 
+from pathlib import Path
 from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 from src.api.dependencies import get_workbench_service
 from src.api.responses.standard_response import StandardResponse, success_response
@@ -16,6 +18,8 @@ from src.schemas.workbench import (
     WorkbenchHealthResponse,
     WorkbenchImageResponse,
 )
+from src.auth.models import User
+from src.security.authorization_gate import get_current_user_optional
 
 router = APIRouter(tags=["Unified Workbench Workflows"])
 
@@ -29,9 +33,10 @@ router = APIRouter(tags=["Unified Workbench Workflows"])
 async def workbench_chat(
     request: WorkbenchChatRequest,
     workbench_service: Annotated[WorkbenchService, Depends(get_workbench_service)],
+    user: User = Depends(get_current_user_optional),
 ) -> StandardResponse[WorkbenchChatResponse]:
     """
-    POST /workbench/chat endpoint executing unified intent routing and RAG grounding.
+    POST /workbench/chat endpoint executing unified intent routing and RAG grounding with user security context.
     """
     try:
         response = await workbench_service.ask_question(
@@ -39,13 +44,79 @@ async def workbench_chat(
             document_id=request.document_id,
             force_rag=request.force_rag,
             top_k=request.top_k,
+            user=user,
         )
+
         return success_response(
             data=response,
             message="Workbench question processed successfully",
         )
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Workbench chat error: {str(exc)}")
+
+
+@router.post(
+    "/workbench/chat/with-attachment",
+    response_model=StandardResponse[WorkbenchChatResponse],
+    summary="Unified Chat Turn with Attached File",
+    description="Route prompt with attached document or image file.",
+)
+async def workbench_chat_with_attachment(
+    query: str = Form(..., description="User question prompt"),
+    file: UploadFile = File(..., description="Attached file payload"),
+    force_rag: bool = Form(False, description="Force RAG flag"),
+    workbench_service: WorkbenchService = Depends(get_workbench_service),
+    user: User = Depends(get_current_user_optional),
+) -> StandardResponse[WorkbenchChatResponse]:
+    """
+    POST /workbench/chat/with-attachment endpoint processing prompt along with attached document or photo.
+    """
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="Uploaded attachment missing valid filename.")
+
+    try:
+        content_bytes = await file.read()
+        response = await workbench_service.ask_question_with_attachment(
+            query=query,
+            filename=file.filename,
+            content_bytes=content_bytes,
+            force_rag=force_rag,
+            user=user,
+        )
+        return success_response(
+            data=response,
+            message=f"Workbench question with attachment '{file.filename}' processed successfully",
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Workbench attachment chat error: {str(exc)}")
+
+
+@router.get(
+    "/workbench/artifacts/download/{filename}",
+    summary="Download Generated Artifact Deliverable",
+    description="Download generated Word (.docx), PowerPoint (.pptx), PDF (.pdf), or Excel (.xlsx) file.",
+)
+async def download_artifact(filename: str):
+    """
+    GET /workbench/artifacts/download/{filename} serving deliverable files.
+    """
+    target_dirs = [Path("examples/output"), Path("data/artifacts")]
+    target_file = None
+    for d in target_dirs:
+        possible = d / filename
+        if possible.exists() and possible.is_file():
+            target_file = possible
+            break
+
+    if not target_file:
+        raise HTTPException(status_code=404, detail=f"Artifact deliverable '{filename}' not found.")
+
+    return FileResponse(
+        path=str(target_file),
+        filename=filename,
+        media_type="application/octet-stream",
+    )
+
 
 
 @router.post(
@@ -60,9 +131,10 @@ async def workbench_upload_document(
     chunk_size: Optional[int] = Form(None, description="Optional custom chunk size"),
     chunk_overlap: Optional[int] = Form(None, description="Optional custom chunk overlap"),
     workbench_service: WorkbenchService = Depends(get_workbench_service),
+    user: User = Depends(get_current_user_optional),
 ) -> StandardResponse[WorkbenchDocumentUploadResponse]:
     """
-    POST /workbench/documents endpoint executing unified ingestion pipeline.
+    POST /workbench/documents endpoint executing unified ingestion pipeline with workspace isolation.
     """
     if not file.filename:
         raise HTTPException(status_code=400, detail="Uploaded document missing valid filename.")
@@ -75,7 +147,10 @@ async def workbench_upload_document(
             document_id=document_id,
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
+            workspace_id=user.workspace_id,
+            classification_level=user.clearance_level,
         )
+
         return success_response(
             data=res,
             message=f"Document '{file.filename}' processed via {res.extraction_mode} and indexed into RAG store.",

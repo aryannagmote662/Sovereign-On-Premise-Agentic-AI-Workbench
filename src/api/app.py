@@ -28,6 +28,7 @@ from src.api.routes.operator import router as operator_router
 from src.api.routes.rag import router as rag_router
 from src.api.routes.router import router as router_info_router
 from src.api.routes.security import router as security_router
+from src.api.routes.telemetry import router as telemetry_router
 from src.api.routes.ui import router as ui_router
 from src.api.routes.workbench import router as workbench_router
 from src.api.responses.standard_response import StandardResponse, success_response
@@ -64,6 +65,15 @@ def create_app() -> FastAPI:
                 rec_mgr = RecoveryManager()
                 rec_mgr.process_startup_recovery()
 
+        # Knowledge Base Startup Check & Auto-Ingestion
+        try:
+            from src.rag.ingest_mrpl import MRPLKnowledgeBaseIngester
+            ingester = MRPLKnowledgeBaseIngester()
+            ingester.ingest(force=False)
+        except Exception as kb_err:
+            import logging
+            logging.getLogger("MRPL.Startup").warning(f"KB startup check notice: {kb_err}")
+
     # Configure CORS Middleware (Restrictive for production)
     app.add_middleware(
         CORSMiddleware,
@@ -97,6 +107,7 @@ def create_app() -> FastAPI:
     app.include_router(workbench_router)
     app.include_router(agent_router)
     app.include_router(agent_tasks_router)
+    app.include_router(telemetry_router)
 
     # Mount Local Static Assets Directory
     frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend"

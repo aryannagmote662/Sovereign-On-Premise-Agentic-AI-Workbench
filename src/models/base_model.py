@@ -47,7 +47,15 @@ class BaseModel(ABC):
     def generate(self, prompt: str, **kwargs: Any) -> str:
         """
         Generate text response by delegating to runtime adapter.
+        Enforces single-model VRAM residency tracking via MemoryManager.
         """
+        try:
+            from src.memory.memory_manager import MemoryManager
+            mm = MemoryManager()
+            mm.prepare_model_for_execution(self.model_name, runtime=self.runtime)
+        except Exception:
+            pass
+
         return self.runtime.generate(prompt=prompt, model_name=self.model_name, **kwargs)
 
     async def stream(self, prompt: str, **kwargs: Any) -> AsyncGenerator[str, None]:

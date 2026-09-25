@@ -95,12 +95,17 @@ class OllamaRuntime(BaseRuntime):
                 "num_predict": max_tokens,
             }
 
-            response = client.generate(
-                model=model_name,
-                prompt=prompt,
-                options=options,
-                stream=False,
-            )
+            gen_payload = {
+                "model": model_name,
+                "prompt": prompt,
+                "options": options,
+                "stream": False,
+            }
+            images = kwargs.get("images")
+            if images:
+                gen_payload["images"] = images
+
+            response = client.generate(**gen_payload)
             return response.get("response", "")
         except Exception as e:
             logger.error(f"OllamaRuntime: Generation error for model '{model_name}': {e}")

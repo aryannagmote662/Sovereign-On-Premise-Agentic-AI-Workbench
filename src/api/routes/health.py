@@ -48,3 +48,39 @@ async def get_health(
         data=health_data,
         message="System and model managers operational",
     )
+
+
+@router.get(
+    "/knowledge-base",
+    response_model=StandardResponse[Dict[str, Any]],
+    summary="MRPL Generic Knowledge Base Status",
+    description="Retrieve dataset readiness status, record counts, vector store state, version, and embedding model telemetry.",
+)
+async def get_knowledge_base_status() -> StandardResponse[Dict[str, Any]]:
+    """
+    GET /knowledge-base endpoint returning dataset health and vector store telemetry.
+    """
+    import json
+    from src.rag.ingest_mrpl import MANIFEST_PATH, MRPLKnowledgeBaseIngester
+    ingester = MRPLKnowledgeBaseIngester()
+    count = ingester.vector_store.count()
+
+    manifest_info = {}
+    if MANIFEST_PATH.exists():
+        try:
+            manifest_info = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    data = {
+        "status": "ready" if count > 0 else "uninitialized",
+        "dataset": "MRPL Generic Knowledge Base",
+        "records": manifest_info.get("total_records", count),
+        "total_indexed_chunks": count,
+        "vector_store": "ready" if count > 0 else "empty",
+        "last_ingested": manifest_info.get("last_ingested", "not_ingested"),
+        "version": manifest_info.get("version", "1.0"),
+        "embedding_model": settings.EMBEDDING_MODEL,
+        "synthetic_notice": "Generic/synthetic refinery engineering knowledge for demonstration.",
+    }
+    return success_response(data=data, message="Knowledge base health and vector store status retrieved")

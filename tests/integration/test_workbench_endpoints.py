@@ -83,7 +83,8 @@ def override_workbench_dependency() -> None:
 
 def test_api_workbench_chat_general() -> None:
     payload = {"query": "Explain what a refinery CDU unit does"}
-    response = client.post("/workbench/chat", json=payload)
+    headers = {"Authorization": f"Bearer {settings.AUTH_TOKEN}"}
+    response = client.post("/workbench/chat", json=payload, headers=headers)
     assert response.status_code == 200
     res = response.json()
     assert res["success"] is True
@@ -95,7 +96,8 @@ def test_api_workbench_chat_general() -> None:
 
 def test_api_workbench_documents_upload() -> None:
     files = {"file": ("manual.txt", b"Operating pressure is 15 bar.", "text/plain")}
-    response = client.post("/workbench/documents", files=files)
+    headers = {"Authorization": f"Bearer {settings.AUTH_TOKEN}"}
+    response = client.post("/workbench/documents", files=files, headers=headers)
     assert response.status_code == 200
     res = response.json()
     assert res["success"] is True

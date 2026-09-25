@@ -16,7 +16,7 @@ def test_ui_index_route(client):
     res = client.get("/")
     assert res.status_code == 200
     assert "text/html" in res.headers["content-type"]
-    assert "MRPL Sovereign AI Workbench" in res.text
+    assert "MRPL Sovereign AI" in res.text
 
 
 def test_ui_static_assets(client):

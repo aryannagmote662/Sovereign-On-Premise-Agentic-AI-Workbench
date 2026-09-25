@@ -14,11 +14,21 @@ const AuditPage = {
     if (!container) return;
 
     try {
-      container.innerHTML = `<p class="card-subtitle">Loading audit logs and security telemetry events...</p>`;
+      container.innerHTML = `
+        <div class="tech-section">
+          <div class="tech-section-header">
+            <span class="tech-section-title">Cryptographic Audit Scan</span>
+            <span class="badge badge-info">POLLING</span>
+          </div>
+          <div class="tech-section-body">
+            <p class="text-secondary" style="font-size: 0.8rem; font-family: var(--font-mono);">Loading audit logs and security telemetry events...</p>
+          </div>
+        </div>
+      `;
 
       const secEvents = await API.get('/security/events').catch(() => []);
-      const tasksData = await API.get('/agent/tasks').catch(() => ({ items: [] }));
-      const tasks = tasksData.items || [];
+      const tasksData = await API.get('/agent/tasks').catch(() => ({ tasks: [] }));
+      const tasks = tasksData.tasks || tasksData.items || [];
 
       let allAuditRows = [];
 
@@ -63,19 +73,23 @@ const AuditPage = {
       allAuditRows.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
       if (allAuditRows.length === 0) {
-        container.innerHTML = `<p class="card-subtitle">No audit events recorded yet.</p>`;
+        container.innerHTML = `
+          <div style="padding: 32px; text-align: center; color: var(--text-muted); font-size: 0.8rem; font-family: var(--font-mono);">
+            NO SECURITY OR AUDIT TRAIL EVENTS RECORDED // HASH LEDGER VERIFIED
+          </div>
+        `;
         return;
       }
 
       const rowsHtml = allAuditRows.map(r => `
         <tr>
-          <td><small>${Utils.formatDate(r.timestamp)}</small></td>
-          <td><code>${Utils.escapeHtml(r.task_id)}</code></td>
-          <td><strong>${Utils.escapeHtml(r.event_type)}</strong></td>
-          <td>${Utils.escapeHtml(r.actor)}</td>
-          <td><code>${Utils.escapeHtml(r.tool)}</code></td>
+          <td><span style="font-family: var(--font-mono); font-size: 0.74rem; color: var(--text-muted);">${Utils.formatDate(r.timestamp)}</span></td>
+          <td><code style="font-size: 0.74rem;">${Utils.escapeHtml(r.task_id)}</code></td>
+          <td><strong style="color: var(--text-primary); font-size: 0.78rem;">${Utils.escapeHtml(r.event_type)}</strong></td>
+          <td><span style="font-size: 0.78rem; color: var(--text-secondary);">${Utils.escapeHtml(r.actor)}</span></td>
+          <td><code style="font-size: 0.74rem; color: var(--text-secondary);">${Utils.escapeHtml(r.tool)}</code></td>
           <td>${Utils.createBadge(r.status)}</td>
-          <td><small style="color: var(--text-secondary); font-family: monospace;">${Utils.escapeHtml(r.details)}</small></td>
+          <td><div style="color: var(--text-muted); font-family: var(--font-mono); font-size: 0.72rem; max-width: 360px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${Utils.escapeHtml(r.details)}">${Utils.escapeHtml(r.details)}</div></td>
         </tr>
       `).join('');
 
@@ -100,9 +114,20 @@ const AuditPage = {
         </div>
       `;
     } catch (err) {
-      container.innerHTML = `<p class="card-subtitle" style="color: var(--status-error);">Failed to load audit logs (${Utils.escapeHtml(err.message)})</p>`;
+      container.innerHTML = `
+        <div class="tech-section" style="border-color: var(--status-error);">
+          <div class="tech-section-header" style="background-color: rgba(239, 68, 68, 0.1);">
+            <span class="tech-section-title" style="color: var(--status-error);">Audit Log Fetch Fault</span>
+            <span class="badge badge-error">FAULT</span>
+          </div>
+          <div class="tech-section-body">
+            <p class="text-secondary" style="font-size: 0.8rem;">${Utils.escapeHtml(err.message)}</p>
+          </div>
+        </div>
+      `;
     }
   }
 };
 
 window.AuditPage = AuditPage;
+

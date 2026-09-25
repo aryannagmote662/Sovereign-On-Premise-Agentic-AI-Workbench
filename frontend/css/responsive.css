@@ -1,62 +1,92 @@
 /*
- * Responsive Styles for MRPL Sovereign AI Workbench UI
+ * Fluid Responsive Media Queries for MRPL Workstation UI
+ * Breakpoints: 375px, 480px, 768px, 1024px, 1280px, 1440px, 1920px, 2560px
  */
 
-@media (max-width: 1024px) {
-  :root {
-    --sidebar-width: 220px;
+/* 2560px - Ultra Wide Workstations */
+@media (min-width: 2560px) {
+  .workstation-layout {
+    max-width: 2200px;
   }
+}
 
-  .cards-grid {
+/* 1440px - Large Desktop Workstations */
+@media (max-width: 1440px) {
+  .tech-grid-3col {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
+/* 1280px - Standard Desktop */
+@media (max-width: 1280px) {
+  .system-monitor-panel {
+    position: fixed;
+    right: 0;
+    top: 0;
+    box-shadow: -4px 0 20px rgba(0, 0, 0, 0.5);
+  }
+}
+
+/* 1024px - Tablet Landscape */
+@media (max-width: 1024px) {
+  .tech-grid-2col {
+    grid-template-columns: 1fr;
+  }
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 768px - Tablet Portrait & Small Devices */
 @media (max-width: 768px) {
-  #app-container {
-    flex-direction: column;
+  :root {
+    --sidebar-width: 60px;
   }
 
-  .sidebar {
-    width: 100%;
-    height: auto;
-  }
-
-  .sidebar-nav {
-    display: flex;
-    overflow-x: auto;
-    padding: 8px 0;
-  }
-
-  .nav-item {
-    padding: 8px 14px;
-    white-space: nowrap;
-    border-left: none;
-    border-bottom: 3px solid transparent;
-  }
-
-  .nav-item.active {
-    border-left-color: transparent;
-    border-bottom-color: var(--accent-teal);
-  }
-
+  .sidebar-header h1,
+  .nav-section-label,
   .sidebar-footer {
     display: none;
   }
 
-  .cards-grid {
-    grid-template-columns: 1fr;
+  .sidebar-header {
+    justify-content: center;
+    padding: 0;
+  }
+
+  .nav-item {
+    justify-content: center;
+    padding: 12px 0;
+  }
+
+  .nav-item span:not(.nav-icon) {
+    display: none;
+  }
+
+  .posture-strip {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .topbar {
-    padding: 0 16px;
+    padding: 0 12px;
   }
 
-  .content-panel {
-    padding: 16px;
+  .topbar-node-badge {
+    display: none;
   }
 
   .message-bubble {
-    max-width: 90%;
+    max-width: 95%;
+  }
+}
+
+/* 480px & 375px - Mobile Workstation */
+@media (max-width: 480px) {
+  .posture-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .topbar-right button:not(#theme-toggle-btn):not(#toggle-monitor-drawer-btn) {
+    display: none;
   }
 }

@@ -134,3 +134,50 @@ class DBAuditEvent:
     risk_level: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
     correlation_id: Optional[str] = None
+
+
+@dataclass
+class DBRole:
+    """
+    Relational record for platform RBAC role.
+    """
+    id: str
+    name: str
+    code: str
+    primary_workspace: str
+    description: str = ""
+    is_active: bool = True
+
+
+@dataclass
+class DBUser:
+    """
+    Relational record for platform User account.
+    """
+    id: str
+    full_name: str
+    email: str
+    password_hash: str
+    role: str
+    department: str
+    workspace_id: str
+    position: Optional[str] = None
+    clearance_level: int = 1
+    status: str = "PENDING"
+    created_at: str = field(default_factory=_utc_now_iso)
+    updated_at: str = field(default_factory=_utc_now_iso)
+    last_login: Optional[str] = None
+
+
+@dataclass
+class DBSession:
+    """
+    Relational record for authenticated user token session.
+    """
+    session_id: str
+    user_id: str
+    token: str
+    created_at: str = field(default_factory=_utc_now_iso)
+    expires_at: str = field(default_factory=_utc_now_iso)
+    is_active: bool = True
+

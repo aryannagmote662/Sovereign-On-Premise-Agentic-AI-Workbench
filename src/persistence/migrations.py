@@ -118,3 +118,60 @@ def run_migrations(conn: sqlite3.Connection, current_version: int, target_versio
         now_iso = datetime.now(timezone.utc).isoformat()
         conn.execute("INSERT OR REPLACE INTO schema_info (version, installed_at) VALUES (1, ?);", (now_iso,))
         logger.info("Database migration v1 successfully applied.")
+
+    if current_version < 2:
+        # Migration 2: Roles, Users, and Sessions Tables
+        conn.executescript(
+            """
+            -- Application Roles Table
+            CREATE TABLE IF NOT EXISTS roles (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                code TEXT UNIQUE NOT NULL,
+                primary_workspace TEXT NOT NULL,
+                description TEXT,
+                is_active INTEGER NOT NULL DEFAULT 1
+            );
+
+            -- Platform Users Table
+            CREATE TABLE IF NOT EXISTS users (
+                id TEXT PRIMARY KEY,
+                full_name TEXT NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL,
+                department TEXT NOT NULL,
+                workspace_id TEXT NOT NULL,
+                clearance_level INTEGER NOT NULL DEFAULT 1,
+                status TEXT NOT NULL DEFAULT 'PENDING',
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                last_login TEXT,
+                FOREIGN KEY (role) REFERENCES roles(code)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+            CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+            CREATE INDEX IF NOT EXISTS idx_users_workspace ON users(workspace_id);
+            CREATE INDEX IF NOT EXISTS idx_users_status ON users(status);
+
+            -- Active User Sessions Table
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                session_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                token TEXT UNIQUE NOT NULL,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                is_active INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(token);
+            CREATE INDEX IF NOT EXISTS idx_sessions_user ON user_sessions(user_id);
+            """
+        )
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        conn.execute("INSERT OR REPLACE INTO schema_info (version, installed_at) VALUES (2, ?);", (now_iso,))
+        logger.info("Database migration v2 successfully applied.")
+

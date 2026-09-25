@@ -92,8 +92,11 @@ class DocumentIndexer:
                 "start_char": c.start_char,
                 "end_char": c.end_char,
                 "word_count": c.word_count,
+                "workspace_id": str(meta_base.get("workspace_id", "Operations")).strip(),
+                "classification_level": int(meta_base.get("classification_level", 1)),
                 "indexed_at": now_utc,
             }
+
             metadatas.append(chunk_meta)
 
         # 3. Store in Local Vector Database

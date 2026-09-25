@@ -47,11 +47,32 @@ class MemoryManager:
 
         if current_model != target_model:
             logger.info(f"MemoryManager: Loading requested model '{target_model}'...")
+            try:
+                from src.models.registry import ModelStatus, get_model_registry
+                from src.observability.telemetry_service import get_telemetry_service
+                registry = get_model_registry()
+                telemetry = get_telemetry_service()
+                registry.update_model_status(target_model, ModelStatus.LOADING)
+                telemetry.emit_event("MODEL_LOADING", f"Loading model '{target_model}' into GPU VRAM...")
+            except Exception:
+                pass
+
             loaded = active_runtime.load_model(target_model)
             if loaded:
                 self.gpu_manager.currently_loaded_model = target_model
+                try:
+                    registry.update_model_status(target_model, ModelStatus.LOADED)
+                    telemetry.emit_event("MODEL_LOADED", f"Model '{target_model}' loaded successfully into VRAM")
+                except Exception:
+                    pass
                 return True
-            return False
+            else:
+                try:
+                    registry.update_model_status(target_model, ModelStatus.ERROR)
+                    telemetry.emit_event("MODEL_ERROR", f"Failed to load model '{target_model}'")
+                except Exception:
+                    pass
+                return False
 
         return True
 

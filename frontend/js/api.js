@@ -12,9 +12,15 @@ const API = {
       'Accept': 'application/json',
     };
 
+    const token = localStorage.getItem('mrpl_token');
+    if (token) {
+      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    }
+
     if (!(options.body instanceof FormData)) {
       defaultHeaders['Content-Type'] = 'application/json';
     }
+
 
     const config = {
       ...options,
@@ -27,6 +33,16 @@ const API = {
     try {
       const response = await fetch(endpoint, config);
       const data = await response.json().catch(() => null);
+
+      if (response.status === 401) {
+        localStorage.removeItem('mrpl_token');
+        if (window.Auth) {
+          window.Auth.currentUser = null;
+          const badgeContainer = document.getElementById('user-profile-badge');
+          if (badgeContainer) badgeContainer.innerHTML = '';
+          window.Auth.showAuthModal(true);
+        }
+      }
 
       if (!response.ok) {
         let msg = `HTTP Error ${response.status}: ${response.statusText}`;
